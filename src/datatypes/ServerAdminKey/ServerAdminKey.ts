@@ -98,8 +98,8 @@ export default class ServerAdminKey {
         .container(SERVER_ADMIN_KEY)
         .items.query<MetaData>({
           query: String.prototype.concat(
-            'SELECT a.generaedAt, a.nickname, a.accountType ',
-            `FROM ${SERVER_ADMIN_KEY} as a`
+            'SELECT a.generatedAt, a.nickname, a.accountType ',
+            `FROM ${SERVER_ADMIN_KEY} as a ORDER BY a.generatedAt`
           ),
         })
         .fetchAll()

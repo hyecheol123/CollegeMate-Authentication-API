@@ -96,7 +96,7 @@ export default class TestEnv {
       accountType: accountType as AccountType,
     });
     // testAuthAPI, server - authentication
-    keyTimestamp = new Date('2023-03-10T00:50:43.000Z');
+    keyTimestamp = new Date('2023-03-11T00:50:43.000Z');
     nickname = 'testAuthAPI';
     accountType = 'server - authentication';
     serverAdminKeySamples.push({

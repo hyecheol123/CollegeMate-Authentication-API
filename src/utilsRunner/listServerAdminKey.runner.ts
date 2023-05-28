@@ -34,4 +34,6 @@ const config = new ServerConfig(
   process.env.DB_ID
 );
 
-listServerAdminKey(config).then(data => console.table(data));
+listServerAdminKey(config).then(data =>
+  console.table(data, ['nickname', 'accountType', 'generatedAt'])
+);
