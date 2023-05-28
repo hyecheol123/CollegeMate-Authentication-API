@@ -6,7 +6,7 @@
  */
 
 import * as Cosmos from '@azure/cosmos';
-import { BinaryLike } from 'crypto';
+import {BinaryLike} from 'crypto';
 import ServerConfigTemplate from '../../ServerConfigTemplate';
 import ServerAdminKey, {
   AccountType,
@@ -15,10 +15,10 @@ import checkAccountType from '../inputValidator/checkAccountType';
 
 /**
  * Function to add enw ServerAdminKey
- * 
+ *
  * @param {string} nickname nickname to identify the key
  * @param {string} accountType accountType associated with the key
- * @param {function(BinaryLike, BinaryLike, BinaryLike):string} hashFunc 
+ * @param {function(BinaryLike, BinaryLike, BinaryLike):string} hashFunc
  *     hash function to geneate key
  * @param {ServerConfigTemplate} config Server configuration,
  *     containing DB connection information
@@ -43,7 +43,12 @@ export default async function newServerAdminKey(
   const generatedAt = new Date();
   generatedAt.setMilliseconds(0);
   const key = hashFunc(nickname, generatedAt.toISOString(), accountType);
-  const keyObj = new ServerAdminKey(key, generatedAt, nickname, accountType as AccountType);
+  const keyObj = new ServerAdminKey(
+    key,
+    generatedAt,
+    nickname,
+    accountType as AccountType
+  );
 
   // Create new ServerAdminKey entry on database
   const dbClient = new Cosmos.CosmosClient({
@@ -51,5 +56,5 @@ export default async function newServerAdminKey(
     key: config.db.key,
   }).database(config.db.databaseId);
   const dbOps = await ServerAdminKey.create(dbClient, keyObj);
-  return (dbOps.item.id);
+  return dbOps.item.id;
 }

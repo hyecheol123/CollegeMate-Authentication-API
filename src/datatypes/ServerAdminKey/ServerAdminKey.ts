@@ -66,6 +66,7 @@ export default class ServerAdminKey {
         .container(SERVER_ADMIN_KEY)
         .items.create<ServerAdminKey>(keyObj);
     } catch (e) {
+      // istanbul ignore next
       // Check for duplicated key
       if ((e as Cosmos.ErrorResponse).code === 409) {
         throw new HTTPError(409, 'Duplicated Key');

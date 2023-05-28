@@ -1,10 +1,10 @@
 /**
  * Runner to execute newServerAdminKey() function on the command-line
- * 
+ *
  * Need two Command-Line Arguments (Starts from 2)
  *   2. nickname
  *   3. accountType
- * 
+ *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
  */
 
@@ -36,9 +36,14 @@ const config = new ServerConfig(
   process.env.DB_ID
 );
 
-newServerAdminKey(process.argv[2], process.argv[3], ServerConfig.hash, config).then(
+newServerAdminKey(
+  process.argv[2],
+  process.argv[3],
+  ServerConfig.hash,
+  config
+).then(
   // DB Operation Success
-  (key) => {
+  key => {
     console.log('Successfully add new ServerAdminKey');
     console.log(`Key: ${key}`);
     // eslint-disable-next-line no-process-exit
