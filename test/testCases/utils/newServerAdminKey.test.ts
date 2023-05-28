@@ -59,6 +59,35 @@ describe('Utility - newServerAdminKey function', () => {
     expect(queryResult.resources.length).toBe(3);
   });
 
+  test('Fail - Duplicated Nickname', async () => {
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Call newServerAdminKey function
+    await expect(
+      newServerAdminKey(
+        'testAdmin',
+        'admin',
+        TestConfig.hash,
+        testEnv.testConfig
+      )
+    ).rejects.toThrow('Duplicated Key or Nickname');
+    await expect(
+      newServerAdminKey(
+        'testAdmin',
+        'server - friend',
+        TestConfig.hash,
+        testEnv.testConfig
+      )
+    ).rejects.toThrow('Duplicated Key or Nickname');
+
+    // DB Check
+    const queryResult = await testEnv.dbClient
+      .container(SERVER_ADMIN_KEY)
+      .items.query(`SELECT * FROM ${SERVER_ADMIN_KEY}`)
+      .fetchAll();
+    expect(queryResult.resources.length).toBe(2);
+  });
+
   test('Fail - Invalid Account Type', async () => {
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
