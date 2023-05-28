@@ -41,7 +41,7 @@ This project uses [Azure Cosmos DB](https://docs.microsoft.com/en-us/azure/cosmo
 It is NoSQL Database without schema; The stored data will look like the Data Diagram located below.
 
 Data Diagram
-*To be added*
+![ERD.png](img/ERD.png)
 
 <details>
   <summary>Click to see configurations of each collection.</summary>
