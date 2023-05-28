@@ -14,7 +14,7 @@ import ServerAdminKey, {
 import checkAccountType from '../inputValidator/checkAccountType';
 
 /**
- * Function to add enw ServerAdminKey
+ * Function to add new ServerAdminKey
  *
  * @param {string} nickname nickname to identify the key
  * @param {string} accountType accountType associated with the key

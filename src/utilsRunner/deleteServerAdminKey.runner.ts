@@ -1,15 +1,15 @@
 /**
- * Runner to execute newServerAdminKey() function on the command-line
+ * Runner to execute deleteServerAdminKey() function on the command-line.
  *
  * Need two Command-Line Arguments (Starts from 2)
- *   2. nickname
- *   3. accountType
+ *   2. operationType (either nickname or key)
+ *   3. value
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
  */
 
 import ServerConfig from '../ServerConfig';
-import newServerAdminKey from '../functions/utils/newServerAdminKey';
+import deleteServerAdminKey from '../functions/utils/deleteServerAdminKey';
 
 // Check Command-Line Argument (2 for system-generated, 2 provided)
 if (process.argv.length !== 4) {
@@ -17,7 +17,7 @@ if (process.argv.length !== 4) {
     String.prototype.concat(
       'Incorrect number of command-line arguments provided!!\n\n',
       'Please check how to use the function and try again.\n',
-      'usage: node dist/utilsRunner/newServerAdminKey.runner.js [nickname] [accountType]'
+      'usage: node dist/utilsRunner/deleteServerAdminKey.runner.js [operationType] [value]'
     )
   );
   // eslint-disable-next-line no-process-exit
@@ -36,18 +36,10 @@ const config = new ServerConfig(
   process.env.DB_ID
 );
 
-newServerAdminKey(
-  process.argv[2],
-  process.argv[3],
-  ServerConfig.hash,
-  config
-).then(
+deleteServerAdminKey(process.argv[2], process.argv[3], config).then(
   // DB Operation Success
-  key => {
-    console.log('Successfully add new ServerAdminKey');
-    console.log(`Key: ${key}`);
-    // eslint-disable-next-line no-process-exit
-    process.exit();
+  () => {
+    console.log(`${process.argv[2]} - ${process.argv[3]} Deleted`);
   },
   // DB Operation Failed
   error => {

@@ -39,7 +39,9 @@
     "prestart": "npm run build",
     "start": "node dist/main.js",
     "prenewServerAdminKey": "npm run build",
-    "newServerAdminKey": "node dist/utilsRunner/newServerAdminKey.runner.js"
+    "newServerAdminKey": "node dist/utilsRunner/newServerAdminKey.runner.js",
+    "predeleteServerAdminKey": "npm run build",
+    "deleteServerAdminKey": "node dist/utilsRunner/deleteServerAdminKey.runner.js"
   },
   "engines": {
     "node": ">=14"

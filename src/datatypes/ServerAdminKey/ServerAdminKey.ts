@@ -6,6 +6,7 @@
 
 import * as Cosmos from '@azure/cosmos';
 import HTTPError from '../../exceptions/HTTPError';
+import NotFoundError from '../../exceptions/NotFoundError';
 
 // DB Container id
 const SERVER_ADMIN_KEY = 'serverAdminKey';
@@ -76,5 +77,54 @@ export default class ServerAdminKey {
     }
 
     return dbOps.item.id;
+  }
+
+  /**
+   * Delete existing ServerAdminKey entry by key
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @param {string} key unique key to identify server or admin
+   */
+  static async deleteByKey(
+    dbClient: Cosmos.Database,
+    key: string
+  ): Promise<void> {
+    try {
+      await dbClient.container(SERVER_ADMIN_KEY).item(key).delete();
+    } catch (e) {
+      // istanbul ignore else
+      if ((e as Cosmos.ErrorResponse).code === 404) {
+        throw new NotFoundError();
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  /**
+   * Delete existing ServerAdminKey entry by nickname
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @param {string} nickname nickname associated with the key
+   */
+  static async deleteByNickname(
+    dbClient: Cosmos.Database,
+    nickname: string
+  ): Promise<void> {
+    const dbOps = await dbClient
+      .container(SERVER_ADMIN_KEY)
+      .items.query<ServerAdminKey>({
+        query: String.prototype.concat(
+          `SELECT a.id FROM ${SERVER_ADMIN_KEY} as a `,
+          'WHERE a.nickname = @nickname'
+        ),
+        parameters: [{name: '@nickname', value: nickname}],
+      })
+      .fetchAll();
+    if (dbOps.resources.length === 0) {
+      throw new NotFoundError();
+    }
+
+    await this.deleteByKey(dbClient, dbOps.resources[0].id);
   }
 }
