@@ -33,7 +33,7 @@ export default async function newServerAdminKey(
     secretString: BinaryLike
   ) => string,
   config: ServerConfigTemplate
-): Promise<Cosmos.ItemResponse<ServerAdminKey>> {
+): Promise<string> {
   // Runtime type check for account type
   if (!checkAccountType(accountType)) {
     throw new Error('Invalid Account Type');
@@ -50,5 +50,6 @@ export default async function newServerAdminKey(
     endpoint: config.db.endpoint,
     key: config.db.key,
   }).database(config.db.databaseId);
-  return await ServerAdminKey.create(dbClient, keyObj);
+  const dbOps = await ServerAdminKey.create(dbClient, keyObj);
+  return (dbOps.item.id);
 }

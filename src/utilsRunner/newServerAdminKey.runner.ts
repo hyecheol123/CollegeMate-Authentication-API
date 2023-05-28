@@ -38,8 +38,9 @@ const config = new ServerConfig(
 
 newServerAdminKey(process.argv[2], process.argv[3], ServerConfig.hash, config).then(
   // DB Operation Success
-  () => {
+  (key) => {
     console.log('Successfully add new ServerAdminKey');
+    console.log(`Key: ${key}`);
     // eslint-disable-next-line no-process-exit
     process.exit();
   },
