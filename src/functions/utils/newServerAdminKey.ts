@@ -55,6 +55,5 @@ export default async function newServerAdminKey(
     endpoint: config.db.endpoint,
     key: config.db.key,
   }).database(config.db.databaseId);
-  const dbOps = await ServerAdminKey.create(dbClient, keyObj);
-  return dbOps.item.id;
+  return await ServerAdminKey.create(dbClient, keyObj);
 }

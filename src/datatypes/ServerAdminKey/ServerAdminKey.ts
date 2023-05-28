@@ -52,12 +52,12 @@ export default class ServerAdminKey {
    *
    * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
    * @param {ServerAdminKey} keyObj serverAdminKey information
-   * @return {Promise<Cosmos.ItemResponse<ServerAdminKey>>} db operation result
+   * @return {Promise<string>} newly created key
    */
   static async create(
     dbClient: Cosmos.Database,
     keyObj: ServerAdminKey
-  ): Promise<Cosmos.ItemResponse<ServerAdminKey>> {
+  ): Promise<string> {
     keyObj.generatedAt = (keyObj.generatedAt as Date).toISOString();
 
     let dbOps;
@@ -75,6 +75,6 @@ export default class ServerAdminKey {
       }
     }
 
-    return dbOps;
+    return dbOps.item.id;
   }
 }
