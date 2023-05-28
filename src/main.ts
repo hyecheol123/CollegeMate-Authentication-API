@@ -1,5 +1,5 @@
 /**
- * Starting express application middleware for CollegeMate Miscellaneous API
+ * Starting express application middleware for CollegeMate Authentication API
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
  */
