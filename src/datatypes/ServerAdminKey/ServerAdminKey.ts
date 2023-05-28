@@ -20,6 +20,12 @@ export type AccountType =
   | 'server - notification'
   | 'server - miscellaneous';
 
+export type MetaData = {
+  nickname: string;
+  generatedAt: Date | string;
+  accountType: string;
+};
+
 export default class ServerAdminKey {
   id: string;
   generatedAt: Date | string;
@@ -77,6 +83,27 @@ export default class ServerAdminKey {
     }
 
     return dbOps.item.id;
+  }
+
+  /**
+   * Retrieve Metadata of existing ServerAdminKey
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @return {Promise<MetaData[]>} list of metadata of ServerAdminKey
+   *     (contains nickname, generatedAt, accountType)
+   */
+  static async readMetaData(dbClient: Cosmos.Database): Promise<MetaData[]> {
+    return (
+      await dbClient
+        .container(SERVER_ADMIN_KEY)
+        .items.query<MetaData>({
+          query: String.prototype.concat(
+            'SELECT a.generaedAt, a.nickname, a.accountType ',
+            `FROM ${SERVER_ADMIN_KEY} as a`
+          ),
+        })
+        .fetchAll()
+    ).resources;
   }
 
   /**
