@@ -31,6 +31,7 @@ authenticationRouter.post('/login', async (req, res, next) => {
     try {
       serverAdminKey = await ServerAdminKey.read(dbClient, serverKey);
     } catch (e) {
+      // istanbul ignore else
       if ((e as HTTPError).statusCode === 404) {
         throw new ForbiddenError();
       } else {

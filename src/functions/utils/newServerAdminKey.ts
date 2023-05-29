@@ -8,9 +8,8 @@
 import * as Cosmos from '@azure/cosmos';
 import {BinaryLike} from 'crypto';
 import ServerConfigTemplate from '../../ServerConfigTemplate';
-import ServerAdminKey, {
-  AccountType,
-} from '../../datatypes/ServerAdminKey/ServerAdminKey';
+import ServerAdminKey from '../../datatypes/ServerAdminKey/ServerAdminKey';
+import {AccountType} from '../../datatypes/AuthToken';
 import checkAccountType from '../inputValidator/checkAccountType';
 
 /**
