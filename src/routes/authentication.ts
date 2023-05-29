@@ -15,6 +15,23 @@ import createServerAdminToken from '../functions/JWT/createServerAdminToken';
 // Path: /auth
 const authenticationRouter = express.Router();
 
+// POST: /auth/request
+authenticationRouter.post('/request', async (req, res, next) => {
+  const dbClient: Cosmos.Database = req.app.locals.dbClient;
+
+  try {
+    // TODO: Check Origin/applicationKey
+    // TODO: Check requestBody
+    // TODO: Check refreshToken if needed (sudo purpose)
+    // TODO: Retrieve user information (USER API)
+    // TODO: DB Operation
+    // TODO: Send Code
+    // TODO: Response
+  } catch (e) {
+    next(e);
+  }
+});
+
 // POST: /auth/login
 authenticationRouter.post('/login', async (req, res, next) => {
   const dbClient: Cosmos.Database = req.app.locals.dbClient;
