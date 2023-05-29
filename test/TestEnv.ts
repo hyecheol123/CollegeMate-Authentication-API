@@ -14,6 +14,9 @@ import * as crypto from 'crypto';
 import * as Cosmos from '@azure/cosmos';
 import TestConfig from './TestConfig';
 import ExpressServer from '../src/ExpressServer';
+import ServerAdminKey, {
+  AccountType,
+} from '../src/datatypes/ServerAdminKey/ServerAdminKey';
 
 /**
  * Class for Test Environment
@@ -61,6 +64,52 @@ export default class TestEnv {
       throw new Error(JSON.stringify(dbOps));
     }
     this.dbClient = dbClient.database(this.testConfig.db.databaseId);
+
+    // Create resources
+    // serverAdminKey container
+    const containerOps = await this.dbClient.containers.create({
+      id: 'serverAdminKey',
+      indexingPolicy: {
+        indexingMode: 'consistent',
+        automatic: true,
+        includedPaths: [{path: '/*'}],
+        excludedPaths: [{path: '/"_etag"/?'}],
+      },
+      uniqueKeyPolicy: {
+        uniqueKeys: [{paths: ['/nickname']}],
+      },
+    });
+    /* istanbul ignore next */
+    if (containerOps.statusCode !== 201) {
+      throw new Error(JSON.stringify(containerOps));
+    }
+    // serverAdminKey data
+    const serverAdminKeySamples: ServerAdminKey[] = [];
+    // testAdmin, admin
+    let keyTimestamp = new Date('2022-03-10T00:50:43.000Z');
+    let nickname = 'testAdmin';
+    let accountType = 'admin';
+    serverAdminKeySamples.push({
+      id: TestConfig.hash(nickname, keyTimestamp.toISOString(), accountType),
+      generatedAt: keyTimestamp.toISOString(),
+      nickname: nickname,
+      accountType: accountType as AccountType,
+    });
+    // testAuthAPI, server - authentication
+    keyTimestamp = new Date('2023-03-11T00:50:43.000Z');
+    nickname = 'testAuthAPI';
+    accountType = 'server - authentication';
+    serverAdminKeySamples.push({
+      id: TestConfig.hash(nickname, keyTimestamp.toISOString(), accountType),
+      generatedAt: keyTimestamp.toISOString(),
+      nickname: nickname,
+      accountType: accountType as AccountType,
+    });
+    for (let index = 0; index < serverAdminKeySamples.length; index++) {
+      await this.dbClient
+        .container('serverAdminKey')
+        .items.create(serverAdminKeySamples[index]);
+    }
 
     // Setup Express Server
     this.expressServer = new ExpressServer(this.testConfig);

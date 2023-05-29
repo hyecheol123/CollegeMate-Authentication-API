@@ -37,7 +37,13 @@
     "posttest": "npm run lint",
     "test:local": "cross-env COSMOS_EMULATOR_ENDPOINT=https://localhost:8081 npm test",
     "prestart": "npm run build",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "prenewServerAdminKey": "npm run build",
+    "newServerAdminKey": "node dist/utilsRunner/newServerAdminKey.runner.js",
+    "predeleteServerAdminKey": "npm run build",
+    "deleteServerAdminKey": "node dist/utilsRunner/deleteServerAdminKey.runner.js",
+    "prelistServerAdminKey": "npm run build",
+    "listServerAdminKey": "node dist/utilsRunner/listServerAdminKey.runner.js"
   },
   "engines": {
     "node": ">=14"

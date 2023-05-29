@@ -17,6 +17,7 @@ Here is the list for supported npm/yarn scripts. These are used to lint, test, b
 - `clean`: remove the compiled code
 - `start`: run the codes (Need following Environment Vairables: DB_ENDPOINT, DB_KEY, DB_ID)
 - `test`: Run the codes
+- `newServerAdminKey`: add a new ServerAdminKey to the database (Need following Command-Line Arguments: nickname, accountType / Need following Environment Vairables: DB_ENDPOINT, DB_KEY, DB_ID)
 
 Use Azure Cosmos DB Emulator while testing the application.
 Details on install and usage guide of the emulator can be found [here](https://docs.microsoft.com/en-us/azure/cosmos-db/local-emulator?tabs=ssl-netstd21).  
