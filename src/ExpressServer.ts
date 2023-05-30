@@ -9,6 +9,7 @@ import {CosmosClient} from '@azure/cosmos';
 import * as cookieParser from 'cookie-parser';
 import ServerConfig from './ServerConfig';
 import HTTPError from './exceptions/HTTPError';
+import authenticationRouter from './routes/authentication';
 
 /**
  * Class contains Express Application and other relevant instances/functions
@@ -65,7 +66,8 @@ export default class ExpressServer {
       }
     );
 
-    // TODO: Routers
+    // Routers
+    this.app.use('/auth', authenticationRouter);
 
     // Default Error Handler
     this.app.use(

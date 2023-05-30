@@ -7,18 +7,10 @@
 import * as Cosmos from '@azure/cosmos';
 import HTTPError from '../../exceptions/HTTPError';
 import NotFoundError from '../../exceptions/NotFoundError';
+import {AccountType} from '../AuthToken';
 
 // DB Container id
 const SERVER_ADMIN_KEY = 'serverAdminKey';
-
-export type AccountType =
-  | 'admin'
-  | 'server - authentication'
-  | 'server - user'
-  | 'server - friend'
-  | 'server - schedule'
-  | 'server - notification'
-  | 'server - miscellaneous';
 
 export type MetaData = {
   nickname: string;
@@ -83,6 +75,31 @@ export default class ServerAdminKey {
     }
 
     return dbOps.item.id;
+  }
+
+  /**
+   * Retrieve ServerAdminKey data of given key
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @param {string} key key to specify serverAdminKey entry
+   * @return {Promise<ServerAdminKey>} a ServerAdminKey entry
+   */
+  static async read(
+    dbClient: Cosmos.Database,
+    key: string
+  ): Promise<ServerAdminKey> {
+    const dbOps = await dbClient.container(SERVER_ADMIN_KEY).item(key).read();
+
+    if (dbOps.statusCode === 404) {
+      throw new NotFoundError();
+    }
+
+    return new ServerAdminKey(
+      key,
+      new Date(dbOps.resource.generatedAt),
+      dbOps.resource.nickname,
+      dbOps.resource.accountType
+    );
   }
 
   /**
