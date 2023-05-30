@@ -5,7 +5,7 @@
  */
 
 import * as jwt from 'jsonwebtoken';
-import AuthToken, {AccountType} from '../../datatypes/AuthToken';
+import AuthToken, {AccountType} from '../../datatypes/Token/AuthToken';
 
 /**
  * Method to generate a new serverAdminToken

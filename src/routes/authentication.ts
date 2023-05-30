@@ -10,7 +10,11 @@ import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import HTTPError from '../exceptions/HTTPError';
 import UnauthenticatedError from '../exceptions/UnauthenticatedError';
 import ForbiddenError from '../exceptions/ForbiddenError';
+import BadRequestError from '../exceptions/BadRequestError';
+import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
+import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
+import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -20,9 +24,34 @@ authenticationRouter.post('/request', async (req, res, next) => {
   const dbClient: Cosmos.Database = req.app.locals.dbClient;
 
   try {
-    // TODO: Check Origin/applicationKey
-    // TODO: Check requestBody
-    // TODO: Check refreshToken if needed (sudo purpose)
+    // Check Origin/applicationKey
+    if (
+      req.header('Origin') !== req.app.get('webpageOrigin') &&
+      !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
+    ) {
+      throw new ForbiddenError();
+    }
+
+    // Check requestBody
+    type InitiateOTPRequest = {
+      email: string;
+      purpose: 'signup' | 'signin' | 'sudo';
+    };
+    const initiateOTPRequestBody: InitiateOTPRequest = req.body;
+    if (!validateInitiateOTPRequest(initiateOTPRequestBody)) {
+      throw new BadRequestError();
+    }
+
+    // Check refreshToken if needed (sudo purpose)
+    let refreshTokenVerifyResult: RefreshTokenVerifyResult;
+    if (initiateOTPRequestBody.purpose === 'sudo') {
+      refreshTokenVerifyResult = await verifyRefreshToken(
+        req,
+        req.app.get('jwtRefreshKey'),
+        dbClient
+      );
+    }
+
     // TODO: Retrieve user information (USER API)
     // TODO: DB Operation
     // TODO: Send Code

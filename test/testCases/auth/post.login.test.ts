@@ -11,7 +11,7 @@ import * as Cosmos from '@azure/cosmos';
 import TestConfig from '../../TestConfig';
 import TestEnv from '../../TestEnv';
 import ExpressServer from '../../../src/ExpressServer';
-import AuthToken from '../../../src/datatypes/AuthToken';
+import AuthToken from '../../../src/datatypes/Token/AuthToken';
 
 describe('POST /auth/login - Get Server/Admin Authentication Token (Server Use Only)', () => {
   let testEnv: TestEnv;

@@ -15,7 +15,7 @@ import * as Cosmos from '@azure/cosmos';
 import TestConfig from './TestConfig';
 import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
-import {AccountType} from '../src/datatypes/AuthToken';
+import {AccountType} from '../src/datatypes/Token/AuthToken';
 
 /**
  * Class for Test Environment

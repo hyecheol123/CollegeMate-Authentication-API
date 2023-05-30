@@ -8,7 +8,7 @@ import * as Cosmos from '@azure/cosmos';
 import HTTPError from '../../exceptions/HTTPError';
 import NotFoundError from '../../exceptions/NotFoundError';
 import MetaData from './MetaData';
-import {AccountType} from '../AuthToken';
+import {AccountType} from '../Token/AuthToken';
 
 // DB Container id
 const SERVER_ADMIN_KEY = 'serverAdminKey';
