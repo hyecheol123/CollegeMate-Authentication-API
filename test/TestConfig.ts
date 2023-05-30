@@ -33,6 +33,7 @@ export default class TestConfig extends ServerConfigTemplate {
       applicationKey: ['<Android-App-v1>', '<iOS-App-v1>'],
       jwtKeys: {secretKey: 'keySecret', refreshKey: 'keySecretRefresh'},
       serverDomainPath: {domain: 'api.collegemate.app'},
+      serverAdminKey: '',
     };
     super(config);
   }

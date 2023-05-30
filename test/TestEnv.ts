@@ -112,14 +112,23 @@ export default class TestEnv {
 
     // Setup Express Server
     this.expressServer = new ExpressServer(this.testConfig);
+    // Mock initServerAdminAuth function
+    jest
+      .spyOn(ExpressServer.prototype, 'initServerAdminAuth')
+      .mockImplementation();
+    await this.expressServer.initServerAdminAuth(this.testConfig);
   }
 
   /**
    * Teardown test environment after test
+   *  - Remove jest Mock
    *  - Remove used resources (DB)
    *  - close database/redis connection from the express server
    */
   async stop(): Promise<void> {
+    // Remove jest Mock
+    jest.restoreAllMocks();
+
     // Drop database
     await (this.dbClient as Cosmos.Database).delete();
 

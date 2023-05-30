@@ -10,6 +10,8 @@ import * as cookieParser from 'cookie-parser';
 import ServerConfig from './ServerConfig';
 import HTTPError from './exceptions/HTTPError';
 import authenticationRouter from './routes/authentication';
+import createServerAdminToken from './functions/JWT/createServerAdminToken';
+import ServerAdminKey from './datatypes/ServerAdminKey/ServerAdminKey';
 
 /**
  * Class contains Express Application and other relevant instances/functions
@@ -90,6 +92,28 @@ export default class ExpressServer {
     this.app.use((_req, res) => {
       res.status(404).send({error: 'Not Found'});
     });
+  }
+
+  /**
+   * Method to initialize serverAdminAuthentication information asyncronously.
+   *
+   * @param config Server's configuration variables
+   */
+  async initServerAdminAuth(config: ServerConfig): Promise<void> {
+    // Set serverAdminKey and serverAdminToken
+    this.app.set('serverAdminKey', config.serverAdminKey);
+    const serverAdminKeyInfo = await ServerAdminKey.read(
+      this.app.locals.dbClient,
+      config.serverAdminKey
+    );
+    this.app.set(
+      'serverAdminToken',
+      createServerAdminToken(
+        serverAdminKeyInfo.nickname,
+        serverAdminKeyInfo.accountType,
+        config.jwt.secretKey
+      )
+    );
   }
 
   /**

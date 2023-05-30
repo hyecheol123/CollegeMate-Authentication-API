@@ -7,10 +7,12 @@
 import * as express from 'express';
 import * as Cosmos from '@azure/cosmos';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
+import User from '../datatypes/User/User';
 import HTTPError from '../exceptions/HTTPError';
 import UnauthenticatedError from '../exceptions/UnauthenticatedError';
 import ForbiddenError from '../exceptions/ForbiddenError';
 import BadRequestError from '../exceptions/BadRequestError';
+import ConflictError from '../exceptions/ConflictError';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
 import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
@@ -50,9 +52,45 @@ authenticationRouter.post('/request', async (req, res, next) => {
         req.app.get('jwtRefreshKey'),
         dbClient
       );
+      if (
+        refreshTokenVerifyResult.content.id !== initiateOTPRequestBody.email
+      ) {
+        throw new ForbiddenError();
+      }
     }
 
-    // TODO: Retrieve user information (USER API)
+    // Retrieve user information (USER API)
+    try {
+      const userProfile = await User.getUserProfile(
+        initiateOTPRequestBody.email,
+        req
+      );
+
+      if (initiateOTPRequestBody.purpose === 'signup') {
+        // signup - should not have user information in the database
+        throw new ConflictError();
+      } else {
+        // If signin and sudo request from delete or locked user, throw error.
+        if (userProfile.deleted) {
+          throw new HTTPError(401, 'Unauthenticated - Deleted User');
+        } else if (userProfile.locked) {
+          throw new HTTPError(401, 'Unauthenticated - Locked Use');
+        }
+      }
+    } catch (e) {
+      if ((e as HTTPError).statusCode === 404) {
+        // signin and sudo should have user information in the database
+        if (
+          initiateOTPRequestBody.purpose === 'signin' ||
+          initiateOTPRequestBody.purpose === 'sudo'
+        ) {
+          throw new UnauthenticatedError();
+        }
+      } else {
+        throw e;
+      }
+    }
+
     // TODO: DB Operation
     // TODO: Send Code
     // TODO: Response

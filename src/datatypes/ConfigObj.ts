@@ -15,6 +15,7 @@ export interface ConfigObj {
   serverDomainPath: ServerDomainPathObj; // indicate server's domain and path
   webpageOrigin: string; // indicate our website Origin
   applicationKey: string[]; // Indicate the list of applicationKey (Mobile Application Origin Check)
+  serverAdminKey: string; // Indicate unique key for this server
 }
 
 /**
