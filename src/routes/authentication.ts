@@ -7,6 +7,7 @@
 import * as express from 'express';
 import * as Cosmos from '@azure/cosmos';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
+import OTP from '../datatypes/OTP/OTP';
 import User from '../datatypes/User/User';
 import HTTPError from '../exceptions/HTTPError';
 import UnauthenticatedError from '../exceptions/UnauthenticatedError';
@@ -15,8 +16,10 @@ import BadRequestError from '../exceptions/BadRequestError';
 import ConflictError from '../exceptions/ConflictError';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
-import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
+import { validateInitiateOTPRequest } from '../functions/inputValidator/validateInitiateOTPRequest';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
+import ServerConfig from '../ServerConfig';
+import { randomInt } from 'crypto';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -91,7 +94,32 @@ authenticationRouter.post('/request', async (req, res, next) => {
       }
     }
 
-    // TODO: DB Operation
+    // DB Operation
+    const expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 3);
+    const passcode = randomInt(0, 1000000)
+      .toString()
+      .padStart(6, randomInt(0, 10).toString());
+    const id = ServerConfig.hash(
+      initiateOTPRequestBody.email,
+      initiateOTPRequestBody.purpose,
+      expireAt.toISOString()
+    );
+    const hashedPasscode = ServerConfig.hash(
+      initiateOTPRequestBody.email,
+      initiateOTPRequestBody.purpose,
+      passcode
+    );
+    const otpRequestInformation = new OTP(
+      id,
+      initiateOTPRequestBody.email,
+      initiateOTPRequestBody.purpose,
+      expireAt,
+      hashedPasscode,
+      false
+    );
+    await OTP.create(dbClient, otpRequestInformation);
+
     // TODO: Send Code
     // TODO: Response
   } catch (e) {
