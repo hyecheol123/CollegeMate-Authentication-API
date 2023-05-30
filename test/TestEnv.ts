@@ -8,6 +8,7 @@
  *  - Remove used table and close database connection from the express server
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
+ * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 import * as crypto from 'crypto';
@@ -15,7 +16,8 @@ import * as Cosmos from '@azure/cosmos';
 import TestConfig from './TestConfig';
 import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
-import {AccountType} from '../src/datatypes/AuthToken';
+import {AccountType} from '../src/datatypes/Token/AuthToken';
+import RefreshToken from '../src/datatypes/RefreshToken/RefreshToken';
 
 /**
  * Class for Test Environment
@@ -66,7 +68,7 @@ export default class TestEnv {
 
     // Create resources
     // serverAdminKey container
-    const containerOps = await this.dbClient.containers.create({
+    let containerOps = await this.dbClient.containers.create({
       id: 'serverAdminKey',
       indexingPolicy: {
         indexingMode: 'consistent',
@@ -108,6 +110,53 @@ export default class TestEnv {
       await this.dbClient
         .container('serverAdminKey')
         .items.create(serverAdminKeySamples[index]);
+    }
+
+    // refreshToken container
+    containerOps = await this.dbClient.containers.create({
+      id: 'refreshToken',
+      indexingPolicy: {
+        indexingMode: 'consistent',
+        automatic: true,
+        includedPaths: [{path: '/*'}],
+        excludedPaths: [{path: '/"_etag"/?'}],
+      },
+      // TODO: Unique key policy? not sure if we need it
+    });
+    /* istanbul ignore next */
+    if (containerOps.statusCode !== 201) {
+      throw new Error(JSON.stringify(containerOps));
+    }
+    // refreshToken data
+    const userLogoutSamples: RefreshToken[] = [];
+    // testAuthAPI, logout
+    let expireAt = new Date('2023-05-31T00:52:23.000Z');
+    keyTimestamp = new Date('2023-05-31T00:12:23.000Z');
+    userLogoutSamples.push({
+      id: TestConfig.hash(
+        'webLogout',
+        keyTimestamp.toISOString(),
+        'server - user'
+      ),
+      email: 'webLogout@wisc.edu',
+      expireAt: expireAt.toISOString(),
+    });
+    expireAt = new Date('2023-05-30T00:52:23.000Z');
+    keyTimestamp = new Date('2023-05-30T00:12:23.000Z');
+    userLogoutSamples.push({
+      id: TestConfig.hash(
+        'appLogout',
+        keyTimestamp.toISOString(),
+        'server - user'
+      ),
+      email: 'appLogout@wisc.edu',
+      expireAt: expireAt.toISOString(),
+    });
+
+    for (let index = 0; index < userLogoutSamples.length; index++) {
+      await this.dbClient
+        .container('refreshToken')
+        .items.create(userLogoutSamples[index]);
     }
 
     // Setup Express Server

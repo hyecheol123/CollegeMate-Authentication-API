@@ -14,7 +14,6 @@ import createServerAdminToken from '../functions/JWT/createServerAdminToken';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import RefreshToken from '../datatypes/RefreshToken/RefreshToken';
 
-
 // Path: /auth
 const authenticationRouter = express.Router();
 
