@@ -7,9 +7,8 @@
 
 import * as Cosmos from '@azure/cosmos';
 import ServerConfigTemplate from '../../ServerConfigTemplate';
-import ServerAdminKey, {
-  MetaData,
-} from '../../datatypes/ServerAdminKey/ServerAdminKey';
+import ServerAdminKey from '../../datatypes/ServerAdminKey/ServerAdminKey';
+import MetaData from '../../datatypes/ServerAdminKey/MetaData';
 
 /**
  * Function to retrieve metadata of all existing ServerAdminKey
