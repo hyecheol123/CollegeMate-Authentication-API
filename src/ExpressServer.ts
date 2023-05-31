@@ -12,6 +12,9 @@ import HTTPError from './exceptions/HTTPError';
 import authenticationRouter from './routes/authentication';
 import createServerAdminToken from './functions/JWT/createServerAdminToken';
 import ServerAdminKey from './datatypes/ServerAdminKey/ServerAdminKey';
+import {Client} from '@microsoft/microsoft-graph-client';
+import {ClientSecretCredential} from '@azure/identity';
+import {TokenCredentialAuthenticationProvider} from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 
 /**
  * Class contains Express Application and other relevant instances/functions
@@ -47,6 +50,21 @@ export default class ExpressServer {
     // Origin and Application Key
     this.app.set('webpageOrigin', config.webpageOrigin);
     this.app.set('applicationKey', config.applicationKey);
+
+    // Azure App Registration Authentication Information (For Microsoft Graph API)
+    const azureCredential = new ClientSecretCredential(
+      config.azureAppRegistrationInfo.tenantId,
+      config.azureAppRegistrationInfo.clientId,
+      config.azureAppRegistrationInfo.clientSecret
+    );
+    const azureAuthProvider = new TokenCredentialAuthenticationProvider(
+      azureCredential,
+      {scopes: ['https://graph.microsoft.com/Mail.Send']}
+    );
+    this.app.locals.msGraphClient = Client.initWithMiddleware({
+      authProvider: azureAuthProvider,
+      debugLogging: true,
+    });
 
     // Only Allow GET, POST, DELETE, PUT, PATCH method
     this.app.use(

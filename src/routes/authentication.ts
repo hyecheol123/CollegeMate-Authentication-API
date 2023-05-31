@@ -6,6 +6,7 @@
 
 import * as express from 'express';
 import * as Cosmos from '@azure/cosmos';
+import {Client} from '@microsoft/microsoft-graph-client';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
 import User from '../datatypes/User/User';
@@ -16,10 +17,11 @@ import BadRequestError from '../exceptions/BadRequestError';
 import ConflictError from '../exceptions/ConflictError';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
-import { validateInitiateOTPRequest } from '../functions/inputValidator/validateInitiateOTPRequest';
+import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
+import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import ServerConfig from '../ServerConfig';
-import { randomInt } from 'crypto';
+import {randomInt} from 'crypto';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -27,6 +29,7 @@ const authenticationRouter = express.Router();
 // POST: /auth/request
 authenticationRouter.post('/request', async (req, res, next) => {
   const dbClient: Cosmos.Database = req.app.locals.dbClient;
+  const msGraphClient: Client = req.app.locals.msGraphClient;
 
   try {
     // Check Origin/applicationKey
@@ -48,7 +51,7 @@ authenticationRouter.post('/request', async (req, res, next) => {
     }
 
     // Check refreshToken if needed (sudo purpose)
-    let refreshTokenVerifyResult: RefreshTokenVerifyResult;
+    let refreshTokenVerifyResult: RefreshTokenVerifyResult | undefined;
     if (initiateOTPRequestBody.purpose === 'sudo') {
       refreshTokenVerifyResult = await verifyRefreshToken(
         req,
@@ -120,8 +123,23 @@ authenticationRouter.post('/request', async (req, res, next) => {
     );
     await OTP.create(dbClient, otpRequestInformation);
 
-    // TODO: Send Code
-    // TODO: Response
+    // Send Code
+    await sendOTPCodeMail(
+      msGraphClient,
+      initiateOTPRequestBody.email,
+      passcode
+    );
+
+    // Response
+    res.status(201).json({
+      requestId: id,
+      codeExpireAt: expireAt.toISOString(),
+      shouldRenewToken:
+        refreshTokenVerifyResult !== undefined &&
+        refreshTokenVerifyResult.aboutToExpire
+          ? true
+          : undefined,
+    });
   } catch (e) {
     next(e);
   }

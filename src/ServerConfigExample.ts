@@ -37,6 +37,11 @@ export default class ServerConfig extends ServerConfigTemplate {
       jwtKeys: {secretKey: 'keySecret', refreshKey: 'keySecretRefresh'},
       serverDomainPath: {domain: 'api.collegemate.app'},
       serverAdminKey: '',
+      azureAppRegistrationInfo: {
+        clientId: '',
+        tenantId: '',
+        clientSecret: '',
+      },
     };
     super(config);
   }
