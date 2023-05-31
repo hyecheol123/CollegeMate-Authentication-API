@@ -32,16 +32,23 @@ describe('DELETE /auth/logout', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
+    // Create Refresh Token
+    const tokenContent = TestConfig.hash(
+      'webLogout',
+      new Date('2024-05-31T00:12:23.000Z').toISOString(),
+      'user - web'
+    );
+
+    const testToken = jwt.sign(tokenContent,
+      , {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
+
     // Test with Refresh Token
     const response = await request(testEnv.expressServer.app)
       .delete('/auth/logout')
-      .set({
-        'X-REFRESH-TOKEN': TestConfig.hash(
-          'webLogout',
-          new Date('2023-05-31T00:12:23.000Z').toISOString(),
-          'server - user'
-        ),
-      });
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`]);
 
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({});

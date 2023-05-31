@@ -119,7 +119,11 @@ export default class TestEnv {
         indexingMode: 'consistent',
         automatic: true,
         includedPaths: [{path: '/*'}],
-        excludedPaths: [{path: '/"_etag"/?'}],
+        excludedPaths: [
+          {path: '/expireAt/?'},
+          {path: '/email/?'},
+          {path: '/"_etag"/?'},
+        ],
       },
       // TODO: Unique key policy? not sure if we need it
     });
@@ -130,8 +134,8 @@ export default class TestEnv {
     // refreshToken data
     const userLogoutSamples: RefreshToken[] = [];
     // testAuthAPI, logout
-    let expireAt = new Date('2023-05-31T00:52:23.000Z');
-    keyTimestamp = new Date('2023-05-31T00:12:23.000Z');
+    let expireAt = new Date('2024-05-31T00:52:23.000Z');
+    keyTimestamp = new Date('2024-05-31T00:12:23.000Z');
     userLogoutSamples.push({
       id: TestConfig.hash(
         'webLogout',
@@ -141,13 +145,13 @@ export default class TestEnv {
       email: 'webLogout@wisc.edu',
       expireAt: expireAt.toISOString(),
     });
-    expireAt = new Date('2023-05-30T00:52:23.000Z');
-    keyTimestamp = new Date('2023-05-30T00:12:23.000Z');
+    expireAt = new Date('2024-05-30T00:52:23.000Z');
+    keyTimestamp = new Date('2024-05-30T00:12:23.000Z');
     userLogoutSamples.push({
       id: TestConfig.hash(
         'appLogout',
         keyTimestamp.toISOString(),
-        'server - user'
+        'user - app'
       ),
       email: 'appLogout@wisc.edu',
       expireAt: expireAt.toISOString(),

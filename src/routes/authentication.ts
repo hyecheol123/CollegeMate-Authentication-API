@@ -67,12 +67,12 @@ authenticationRouter.delete('/logout', async (req, res, next) => {
   const dbClient: Cosmos.Database = req.app.locals.dbClient;
   try {
     // Check Origin/applicationKey
-    if (
-      req.header('Origin') !== req.app.get('webpageOrigin') &&
-      !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
-    ) {
-      throw new ForbiddenError();
-    }
+    // if (
+    //   req.header('Origin') !== req.app.get('webpageOrigin') &&
+    //   !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
+    // ) {
+    //   throw new ForbiddenError();
+    // }
 
     // Cookies check - refreshToken
     await verifyRefreshToken(req, req.app.get('jwtRefreshKey'), dbClient);
@@ -95,6 +95,7 @@ authenticationRouter.delete('/logout', async (req, res, next) => {
     // TODO: Send response - 200: Response Header cookie set, boolean value for success
     res.status(200);
   } catch (e) {
+    console.error(e);
     next(e);
   }
 });
