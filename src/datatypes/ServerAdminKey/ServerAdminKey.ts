@@ -57,7 +57,9 @@ export default class ServerAdminKey {
     dbClient: Cosmos.Database,
     keyObj: ServerAdminKey
   ): Promise<string> {
-    keyObj.generatedAt = (keyObj.generatedAt as Date).toISOString();
+    if (keyObj.generatedAt instanceof Date) {
+      keyObj.generatedAt = (keyObj.generatedAt as Date).toISOString();
+    }
 
     let dbOps;
     try {

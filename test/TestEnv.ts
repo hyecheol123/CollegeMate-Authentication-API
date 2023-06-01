@@ -18,6 +18,7 @@ import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
 import {AccountType} from '../src/datatypes/Token/AuthToken';
 import RefreshToken from '../src/datatypes/RefreshToken/RefreshToken';
+import createRefreshToken from '../src/functions/JWT/createRefreshToken';
 
 /**
  * Class for Test Environment
@@ -132,35 +133,25 @@ export default class TestEnv {
       throw new Error(JSON.stringify(containerOps));
     }
     // refreshToken data
-    const userLogoutSamples: RefreshToken[] = [];
+    const userRefreshTokenSamples: RefreshToken[] = [];
     // testAuthAPI, logout
     let expireAt = new Date('2024-05-31T00:52:23.000Z');
-    keyTimestamp = new Date('2024-05-31T00:12:23.000Z');
-    userLogoutSamples.push({
-      id: TestConfig.hash(
-        'webLogout',
-        keyTimestamp.toISOString(),
-        'server - user'
-      ),
+    userRefreshTokenSamples.push({
+      id: createRefreshToken('webLogout@wisc.edu', 'keySecretRefresh'),
       email: 'webLogout@wisc.edu',
       expireAt: expireAt.toISOString(),
     });
     expireAt = new Date('2024-05-30T00:52:23.000Z');
-    keyTimestamp = new Date('2024-05-30T00:12:23.000Z');
-    userLogoutSamples.push({
-      id: TestConfig.hash(
-        'appLogout',
-        keyTimestamp.toISOString(),
-        'user - app'
-      ),
+    userRefreshTokenSamples.push({
+      id: createRefreshToken('appLogout@wisc.edu', 'keySecretRefresh'),
       email: 'appLogout@wisc.edu',
       expireAt: expireAt.toISOString(),
     });
 
-    for (let index = 0; index < userLogoutSamples.length; index++) {
+    for (let index = 0; index < userRefreshTokenSamples.length; index++) {
       await this.dbClient
         .container('refreshToken')
-        .items.create(userLogoutSamples[index]);
+        .items.create(userRefreshTokenSamples[index]);
     }
 
     // Setup Express Server

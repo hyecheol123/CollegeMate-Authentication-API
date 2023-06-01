@@ -2,6 +2,7 @@
  * Define type and CRUD methods for each refreshToken entry
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
+ * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 import * as Cosmos from '@azure/cosmos';
@@ -38,7 +39,11 @@ export default class RefreshToken {
     dbClient: Cosmos.Database,
     refreshTokenObj: RefreshToken
   ): Promise<void> {
-    refreshTokenObj.expireAt = (refreshTokenObj.expireAt as Date).toISOString();
+    if (refreshTokenObj.expireAt instanceof Date) {
+      refreshTokenObj.expireAt = (
+        refreshTokenObj.expireAt as Date
+      ).toISOString();
+    }
     await dbClient
       .container(REFRESH_TOKEN)
       .items.create<RefreshToken>(refreshTokenObj);

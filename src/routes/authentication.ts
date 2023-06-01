@@ -67,35 +67,32 @@ authenticationRouter.delete('/logout', async (req, res, next) => {
   const dbClient: Cosmos.Database = req.app.locals.dbClient;
   try {
     // Check Origin/applicationKey
-    // if (
-    //   req.header('Origin') !== req.app.get('webpageOrigin') &&
-    //   !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
-    // ) {
-    //   throw new ForbiddenError();
-    // }
+    if (
+      req.header('Origin') !== req.app.get('webpageOrigin') &&
+      !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
+    ) {
+      throw new ForbiddenError();
+    }
 
     // Cookies check - refreshToken
     await verifyRefreshToken(req, req.app.get('jwtRefreshKey'), dbClient);
-    const refreshToken = req.cookies('X-REFRESH-TOKEN');
+    const refreshToken = req.cookies['X-REFRESH-TOKEN'];
 
     // DB Operation - Delete refresh token and access token
     try {
       await RefreshToken.delete(dbClient, refreshToken);
     } catch (e) {
-      // istanbul ignore if
+      // istanbul ignore next
       if ((e as Cosmos.ErrorResponse).code !== 404) {
         throw e;
       }
     }
 
-    // Clear Cookie & Response
+    // Send response - 200: Response Header cookie set
     res.clearCookie('X-ACCESS-TOKEN', {httpOnly: true, maxAge: 0});
     res.clearCookie('X-REFRESH-TOKEN', {httpOnly: true, maxAge: 0});
-
-    // TODO: Send response - 200: Response Header cookie set, boolean value for success
-    res.status(200);
+    res.status(200).send();
   } catch (e) {
-    console.error(e);
     next(e);
   }
 });
