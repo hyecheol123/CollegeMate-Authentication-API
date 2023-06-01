@@ -15,7 +15,7 @@ import * as Cosmos from '@azure/cosmos';
 import TestConfig from './TestConfig';
 import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
-import {AccountType} from '../src/datatypes/Token/AuthToken';
+import { AccountType } from '../src/datatypes/Token/AuthToken';
 
 /**
  * Class for Test Environment
@@ -71,11 +71,11 @@ export default class TestEnv {
       indexingPolicy: {
         indexingMode: 'consistent',
         automatic: true,
-        includedPaths: [{path: '/*'}],
-        excludedPaths: [{path: '/"_etag"/?'}],
+        includedPaths: [{ path: '/*' }],
+        excludedPaths: [{ path: '/"_etag"/?' }],
       },
       uniqueKeyPolicy: {
-        uniqueKeys: [{paths: ['/nickname']}],
+        uniqueKeys: [{ paths: ['/nickname'] }],
       },
     });
     /* istanbul ignore next */
@@ -109,6 +109,19 @@ export default class TestEnv {
         .container('serverAdminKey')
         .items.create(serverAdminKeySamples[index]);
     }
+
+    // refreshToken container
+    // TODO: refreshToken data
+
+    // otp container
+    // TODO: otp data
+
+    // User Mock Data
+
+    // Mocking Email Sending Module
+    jest.mock('../src/functions/utils/sendOTPCodeMail', () =>
+      jest.fn().mockImplementation(() => Promise.resolve())
+    );
 
     // Setup Express Server
     this.expressServer = new ExpressServer(this.testConfig);

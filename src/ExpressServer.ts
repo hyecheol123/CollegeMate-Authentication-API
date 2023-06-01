@@ -5,16 +5,16 @@
  */
 
 import * as express from 'express';
-import {CosmosClient} from '@azure/cosmos';
+import { CosmosClient } from '@azure/cosmos';
 import * as cookieParser from 'cookie-parser';
 import ServerConfig from './ServerConfig';
 import HTTPError from './exceptions/HTTPError';
 import authenticationRouter from './routes/authentication';
 import createServerAdminToken from './functions/JWT/createServerAdminToken';
 import ServerAdminKey from './datatypes/ServerAdminKey/ServerAdminKey';
-import {Client} from '@microsoft/microsoft-graph-client';
-import {ClientSecretCredential} from '@azure/identity';
-import {TokenCredentialAuthenticationProvider} from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
+import { Client } from '@microsoft/microsoft-graph-client';
+import { ClientSecretCredential } from '@azure/identity';
+import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 
 /**
  * Class contains Express Application and other relevant instances/functions
@@ -50,32 +50,6 @@ export default class ExpressServer {
     // Origin and Application Key
     this.app.set('webpageOrigin', config.webpageOrigin);
     this.app.set('applicationKey', config.applicationKey);
-
-    // Azure App Registration Authentication Information (For Microsoft Graph API)
-    const azureCredential = new ClientSecretCredential(
-      config.azureAppRegistrationInfo.tenantId,
-      config.azureAppRegistrationInfo.clientId,
-      config.azureAppRegistrationInfo.clientSecret
-    );
-    const azureAuthProvider = new TokenCredentialAuthenticationProvider(
-      azureCredential,
-      {scopes: ['https://graph.microsoft.com/.default']}
-    );
-    this.app.locals.msGraphClient = Client.initWithMiddleware({
-      authProvider: azureAuthProvider,
-    });
-    this.app.set(
-      'azureUserObjId',
-      config.azureAppRegistrationInfo.userObjectId
-    );
-    this.app.set(
-      'noReplyEmailAddress',
-      config.azureAppRegistrationInfo.noReplyEmailAddress
-    );
-    this.app.set(
-      'mainEmailAddress',
-      config.azureAppRegistrationInfo.mainEmailAddress
-    );
 
     // Only Allow GET, POST, DELETE, PUT, PATCH method
     this.app.use(
@@ -114,12 +88,12 @@ export default class ExpressServer {
           console.error(err);
           err = new HTTPError(500, 'Server Error');
         }
-        res.status((err as HTTPError).statusCode).json({error: err.message});
+        res.status((err as HTTPError).statusCode).json({ error: err.message });
       }
     );
 
     this.app.use((_req, res) => {
-      res.status(404).send({error: 'Not Found'});
+      res.status(404).send({ error: 'Not Found' });
     });
   }
 
@@ -142,6 +116,32 @@ export default class ExpressServer {
         serverAdminKeyInfo.accountType,
         config.jwt.secretKey
       )
+    );
+
+    // Azure App Registration Authentication Information (For Microsoft Graph API)
+    const azureCredential = new ClientSecretCredential(
+      config.azureAppRegistrationInfo.tenantId,
+      config.azureAppRegistrationInfo.clientId,
+      config.azureAppRegistrationInfo.clientSecret
+    );
+    const azureAuthProvider = new TokenCredentialAuthenticationProvider(
+      azureCredential,
+      { scopes: ['https://graph.microsoft.com/.default'] }
+    );
+    this.app.locals.msGraphClient = Client.initWithMiddleware({
+      authProvider: azureAuthProvider,
+    });
+    this.app.set(
+      'azureUserObjId',
+      config.azureAppRegistrationInfo.userObjectId
+    );
+    this.app.set(
+      'noReplyEmailAddress',
+      config.azureAppRegistrationInfo.noReplyEmailAddress
+    );
+    this.app.set(
+      'mainEmailAddress',
+      config.azureAppRegistrationInfo.mainEmailAddress
     );
   }
 
