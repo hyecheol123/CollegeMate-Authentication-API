@@ -48,7 +48,8 @@ describe('DELETE /auth/logout', () => {
     // Test with Refresh Token
     const response = await request(testEnv.expressServer.app)
       .delete('/auth/logout')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`]);
+      .set('Cookie'= [`X-REFRESH-TOKEN=${testToken}`])
+      .set({Origin: 'https://collegemate.app'})
 
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({});
