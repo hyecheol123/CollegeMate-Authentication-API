@@ -41,6 +41,9 @@ export default class ServerConfig extends ServerConfigTemplate {
         clientId: '',
         tenantId: '',
         clientSecret: '',
+        userObjectId: '',
+        noReplyEmailAddress: '',
+        mainEmailAddress: '',
       },
     };
     super(config);

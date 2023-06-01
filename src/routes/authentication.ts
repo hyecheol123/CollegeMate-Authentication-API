@@ -126,6 +126,9 @@ authenticationRouter.post('/request', async (req, res, next) => {
     // Send Code
     await sendOTPCodeMail(
       msGraphClient,
+      req.app.get('azureUserObjId'),
+      req.app.get('noReplyEmailAddress'),
+      req.app.get('mainEmailAddress'),
       initiateOTPRequestBody.email,
       passcode
     );

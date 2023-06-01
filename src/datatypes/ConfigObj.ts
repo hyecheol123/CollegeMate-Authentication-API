@@ -55,4 +55,7 @@ export interface AzureAppRegistrationObj {
   clientId: string;
   tenantId: string;
   clientSecret: string;
+  userObjectId: string;
+  noReplyEmailAddress: string;
+  mainEmailAddress: string;
 }

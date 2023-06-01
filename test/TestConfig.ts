@@ -38,6 +38,9 @@ export default class TestConfig extends ServerConfigTemplate {
         clientId: '',
         tenantId: '',
         clientSecret: '',
+        userObjectId: '',
+        noReplyEmailAddress: '',
+        mainEmailAddress: '',
       },
     };
     super(config);

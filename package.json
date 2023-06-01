@@ -28,7 +28,9 @@
     "testTimeout": 120000
   },
   "scripts": {
+    "prebuild": "npm run clean",
     "build": "tsc",
+    "postbuild": "copyfiles -u 1 src/**/*.ejs dist/",
     "clean": "gts clean",
     "lint": "gts lint",
     "lint:fix": "gts fix",
@@ -57,6 +59,7 @@
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.2.5",
     "@types/supertest": "^2.0.12",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "gts": "^3.1.1",
     "jest": "^29.5.0",

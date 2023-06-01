@@ -59,12 +59,23 @@ export default class ExpressServer {
     );
     const azureAuthProvider = new TokenCredentialAuthenticationProvider(
       azureCredential,
-      {scopes: ['https://graph.microsoft.com/Mail.Send']}
+      {scopes: ['https://graph.microsoft.com/.default']}
     );
     this.app.locals.msGraphClient = Client.initWithMiddleware({
       authProvider: azureAuthProvider,
-      debugLogging: true,
     });
+    this.app.set(
+      'azureUserObjId',
+      config.azureAppRegistrationInfo.userObjectId
+    );
+    this.app.set(
+      'noReplyEmailAddress',
+      config.azureAppRegistrationInfo.noReplyEmailAddress
+    );
+    this.app.set(
+      'mainEmailAddress',
+      config.azureAppRegistrationInfo.mainEmailAddress
+    );
 
     // Only Allow GET, POST, DELETE, PUT, PATCH method
     this.app.use(
