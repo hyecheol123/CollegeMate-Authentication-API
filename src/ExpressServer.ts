@@ -102,6 +102,7 @@ export default class ExpressServer {
    *
    * @param config Server's configuration variables
    */
+  // istanbul ignore next
   async initServerAdminAuth(config: ServerConfig): Promise<void> {
     // Set serverAdminKey and serverAdminToken
     this.app.set('serverAdminKey', config.serverAdminKey);

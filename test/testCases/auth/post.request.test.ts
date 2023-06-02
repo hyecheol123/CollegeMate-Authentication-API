@@ -209,6 +209,68 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     expect(dbQuery.resources.length).toBe(0);
   });
 
+  test('Fail - sudo purpose request with invalid token', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // sudo purpose request with invalid token (use access token)
+    // Create new refreshToken
+    const tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'access',
+      tokenType: 'user',
+    };
+    let refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.secretKey,
+      {algorithm: 'HS512', expiresIn: '15m'}
+    );
+    // Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({Origin: 'https://collegemate.app'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // Another test
+    refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // Request with removed token
+    tokenContents.type = 'refresh';
+    refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // DB Checks
+    const dbQuery = await testEnv.dbClient
+      .container('otp')
+      .items.query({
+        query: 'SELECT * FROM otp',
+      })
+      .fetchAll();
+    expect(dbQuery.resources.length).toBe(0);
+  });
+
   test('Fail - sudo purpose request with unmatching refreshToken', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
@@ -417,18 +479,170 @@ describe('POST /auth/request - Initiate OTP Request', () => {
   });
 
   test('Success - signup purpose', async () => {
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Request
+    const response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({purpose: 'signup', email: 'newaccount@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+
+    // DB Checks
+    const dbQuery = await testEnv.dbClient
+      .container('otp')
+      .items.query({
+        query: 'SELECT * FROM otp',
+      })
+      .fetchAll();
+    expect(dbQuery.resources.length).toBe(1);
+    expect(dbQuery.resources[0].id).toBe(response.body.requestId);
+    expect(dbQuery.resources[0].email).toBe('newaccount@wisc.edu');
+    expect(dbQuery.resources[0].purpose).toBe('signup');
+    expect(dbQuery.resources[0].verified).toBe(false);
+    const expireAt = new Date();
+    expect(new Date(dbQuery.resources[0].expireAt) > expireAt).toBe(true);
+    expireAt.setMinutes(expireAt.getMinutes() + 3);
+    expect(new Date(dbQuery.resources[0].expireAt) <= expireAt).toBe(true);
   });
 
   test('Success - signin purpose', async () => {
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Request
+    const response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+
+    // DB Checks
+    const dbQuery = await testEnv.dbClient
+      .container('otp')
+      .items.query({
+        query: 'SELECT * FROM otp',
+      })
+      .fetchAll();
+    expect(dbQuery.resources.length).toBe(1);
+    expect(dbQuery.resources[0].id).toBe(response.body.requestId);
+    expect(dbQuery.resources[0].email).toBe('existing@wisc.edu');
+    expect(dbQuery.resources[0].purpose).toBe('signin');
+    expect(dbQuery.resources[0].verified).toBe(false);
+    const expireAt = new Date();
+    expect(new Date(dbQuery.resources[0].expireAt) > expireAt).toBe(true);
+    expireAt.setMinutes(expireAt.getMinutes() + 3);
+    expect(new Date(dbQuery.resources[0].expireAt) <= expireAt).toBe(true);
   });
 
   test('Success - sudo purpose', async () => {
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Create RefreshToken
+    const tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    const refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.refreshKey,
+      {algorithm: 'HS512', expiresIn: '180m'}
+    );
+    const tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
+      id: refreshToken,
+      email: 'existing@wisc.edu',
+      expireAt: tokenExpireAt.toISOString(),
+    });
+
+    // Request
+    const response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+
+    // DB Checks
+    const dbQuery = await testEnv.dbClient
+      .container('otp')
+      .items.query({
+        query: 'SELECT * FROM otp',
+      })
+      .fetchAll();
+    expect(dbQuery.resources.length).toBe(1);
+    expect(dbQuery.resources[0].id).toBe(response.body.requestId);
+    expect(dbQuery.resources[0].email).toBe('existing@wisc.edu');
+    expect(dbQuery.resources[0].purpose).toBe('sudo');
+    expect(dbQuery.resources[0].verified).toBe(false);
+    const expireAt = new Date();
+    expect(new Date(dbQuery.resources[0].expireAt) > expireAt).toBe(true);
+    expireAt.setMinutes(expireAt.getMinutes() + 3);
+    expect(new Date(dbQuery.resources[0].expireAt) <= expireAt).toBe(true);
   });
 
   test('Success - sudo purpose / with about to expire token', async () => {
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Create RefreshToken
+    const tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    const refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.refreshKey,
+      {algorithm: 'HS512', expiresIn: '3m'}
+    );
+    const tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 3);
+    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
+      id: refreshToken,
+      email: 'existing@wisc.edu',
+      expireAt: tokenExpireAt.toISOString(),
+    });
+
+    // Request
+    const response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBe(true);
+
+    // DB Checks
+    const dbQuery = await testEnv.dbClient
+      .container('otp')
+      .items.query({
+        query: 'SELECT * FROM otp',
+      })
+      .fetchAll();
+    expect(dbQuery.resources.length).toBe(1);
+    expect(dbQuery.resources[0].id).toBe(response.body.requestId);
+    expect(dbQuery.resources[0].email).toBe('existing@wisc.edu');
+    expect(dbQuery.resources[0].purpose).toBe('sudo');
+    expect(dbQuery.resources[0].verified).toBe(false);
+    const expireAt = new Date();
+    expect(new Date(dbQuery.resources[0].expireAt) > expireAt).toBe(true);
+    expireAt.setMinutes(expireAt.getMinutes() + 3);
+    expect(new Date(dbQuery.resources[0].expireAt) <= expireAt).toBe(true);
   });
 });

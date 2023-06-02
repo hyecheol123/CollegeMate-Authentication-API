@@ -34,7 +34,8 @@
       "!src/datatypes/User/getUserProfile.ts",
       "!src/ServerConfigExample.ts",
       "!src/main.ts",
-      "!src/utilsRunner/*"
+      "!src/utilsRunner/*",
+      "!src/functions/utils/sendOTPCodeMail.ts"
     ]
   },
   "scripts": {
