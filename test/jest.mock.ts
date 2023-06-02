@@ -5,7 +5,7 @@
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
  */
 
-import { Request } from 'express';
+import {Request} from 'express';
 import NotFoundError from '../src/exceptions/NotFoundError';
 import User from '../src/datatypes/User/User';
 
@@ -65,7 +65,7 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
         default:
           throw new NotFoundError();
       }
-    })
+    }),
 }));
 
 // Mocking Email Sending Module
