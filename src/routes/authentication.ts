@@ -22,6 +22,7 @@ import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import ServerConfig from '../ServerConfig';
 import {randomInt} from 'crypto';
+import User from '../datatypes/User/User';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -66,24 +67,11 @@ authenticationRouter.post('/request', async (req, res, next) => {
     }
 
     // Retrieve user information (USER API)
+    let userProfile: User | undefined = undefined;
     try {
-      const userProfile = await getUserProfile(
-        initiateOTPRequestBody.email,
-        req
-      );
-
-      if (initiateOTPRequestBody.purpose === 'signup') {
-        // signup - should not have user information in the database
-        throw new ConflictError();
-      } else {
-        // If signin and sudo request from delete or locked user, throw error.
-        if (userProfile.deleted) {
-          throw new HTTPError(401, 'Unauthenticated - Deleted User');
-        } else if (userProfile.locked) {
-          throw new HTTPError(401, 'Unauthenticated - Locked User');
-        }
-      }
+      userProfile = await getUserProfile(initiateOTPRequestBody.email, req);
     } catch (e) {
+      // istanbul ignore else
       if ((e as HTTPError).statusCode === 404) {
         // signin and sudo should have user information in the database
         if (
@@ -94,6 +82,19 @@ authenticationRouter.post('/request', async (req, res, next) => {
         }
       } else {
         throw e;
+      }
+    }
+    if (userProfile) {
+      if (initiateOTPRequestBody.purpose === 'signup') {
+        // signup - should not have user information in the database
+        throw new ConflictError();
+      } else {
+        // If signin and sudo request from delete or locked user, throw error.
+        if (userProfile.deleted) {
+          throw new HTTPError(401, 'Unauthenticated - Deleted User');
+        } else if (userProfile.locked) {
+          throw new HTTPError(401, 'Unauthenticated - Locked User');
+        }
       }
     }
 
