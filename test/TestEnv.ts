@@ -15,7 +15,7 @@ import * as Cosmos from '@azure/cosmos';
 import TestConfig from './TestConfig';
 import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
-import { AccountType } from '../src/datatypes/Token/AuthToken';
+import {AccountType} from '../src/datatypes/Token/AuthToken';
 
 /**
  * Class for Test Environment
@@ -66,16 +66,16 @@ export default class TestEnv {
 
     // Create resources
     // serverAdminKey container
-    const containerOps = await this.dbClient.containers.create({
+    let containerOps = await this.dbClient.containers.create({
       id: 'serverAdminKey',
       indexingPolicy: {
         indexingMode: 'consistent',
         automatic: true,
-        includedPaths: [{ path: '/*' }],
-        excludedPaths: [{ path: '/"_etag"/?' }],
+        includedPaths: [{path: '/*'}],
+        excludedPaths: [{path: '/"_etag"/?'}],
       },
       uniqueKeyPolicy: {
-        uniqueKeys: [{ paths: ['/nickname'] }],
+        uniqueKeys: [{paths: ['/nickname']}],
       },
     });
     /* istanbul ignore next */
@@ -111,17 +111,42 @@ export default class TestEnv {
     }
 
     // refreshToken container
-    // TODO: refreshToken data
+    containerOps = await this.dbClient.containers.create({
+      id: 'refreshToken',
+      indexingPolicy: {
+        indexingMode: 'consistent',
+        automatic: true,
+        includedPaths: [{path: '/*'}],
+        excludedPaths: [{path: '/"_etag"/?'}],
+      },
+    });
+    /* istanbul ignore next */
+    if (containerOps.statusCode !== 201) {
+      throw new Error(JSON.stringify(containerOps));
+    }
+    // refreshToken data is created whenever needed
 
     // otp container
-    // TODO: otp data
+    containerOps = await this.dbClient.containers.create({
+      id: 'otp',
+      indexingPolicy: {
+        indexingMode: 'consistent',
+        automatic: true,
+        includedPaths: [{path: '/*'}],
+        excludedPaths: [
+          {path: '/passcode/?'},
+          {path: '/verified/?'},
+          {path: '/"_etag"/?'},
+        ],
+      },
+    });
+    /* istanbul ignore next */
+    if (containerOps.statusCode !== 201) {
+      throw new Error(JSON.stringify(containerOps));
+    }
+    // otp data is generated whenever needed
 
-    // User Mock Data
-
-    // Mocking Email Sending Module
-    jest.mock('../src/functions/utils/sendOTPCodeMail', () =>
-      jest.fn().mockImplementation(() => Promise.resolve())
-    );
+    // SEE ./jest.mock.ts FOR MODULE MOCKING SETUP
 
     // Setup Express Server
     this.expressServer = new ExpressServer(this.testConfig);
@@ -139,9 +164,6 @@ export default class TestEnv {
    *  - close database/redis connection from the express server
    */
   async stop(): Promise<void> {
-    // Remove jest Mock
-    jest.restoreAllMocks();
-
     // Drop database
     await (this.dbClient as Cosmos.Database).delete();
 

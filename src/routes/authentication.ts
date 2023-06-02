@@ -9,7 +9,7 @@ import * as Cosmos from '@azure/cosmos';
 import {Client} from '@microsoft/microsoft-graph-client';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
-import User from '../datatypes/User/User';
+import getUserProfile from '../datatypes/User/getUserProfile';
 import HTTPError from '../exceptions/HTTPError';
 import UnauthenticatedError from '../exceptions/UnauthenticatedError';
 import ForbiddenError from '../exceptions/ForbiddenError';
@@ -67,7 +67,7 @@ authenticationRouter.post('/request', async (req, res, next) => {
 
     // Retrieve user information (USER API)
     try {
-      const userProfile = await User.getUserProfile(
+      const userProfile = await getUserProfile(
         initiateOTPRequestBody.email,
         req
       );

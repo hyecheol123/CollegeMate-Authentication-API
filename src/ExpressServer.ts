@@ -5,16 +5,16 @@
  */
 
 import * as express from 'express';
-import { CosmosClient } from '@azure/cosmos';
+import {CosmosClient} from '@azure/cosmos';
 import * as cookieParser from 'cookie-parser';
 import ServerConfig from './ServerConfig';
 import HTTPError from './exceptions/HTTPError';
 import authenticationRouter from './routes/authentication';
 import createServerAdminToken from './functions/JWT/createServerAdminToken';
 import ServerAdminKey from './datatypes/ServerAdminKey/ServerAdminKey';
-import { Client } from '@microsoft/microsoft-graph-client';
-import { ClientSecretCredential } from '@azure/identity';
-import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
+import {Client} from '@microsoft/microsoft-graph-client';
+import {ClientSecretCredential} from '@azure/identity';
+import {TokenCredentialAuthenticationProvider} from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 
 /**
  * Class contains Express Application and other relevant instances/functions
@@ -88,12 +88,12 @@ export default class ExpressServer {
           console.error(err);
           err = new HTTPError(500, 'Server Error');
         }
-        res.status((err as HTTPError).statusCode).json({ error: err.message });
+        res.status((err as HTTPError).statusCode).json({error: err.message});
       }
     );
 
     this.app.use((_req, res) => {
-      res.status(404).send({ error: 'Not Found' });
+      res.status(404).send({error: 'Not Found'});
     });
   }
 
@@ -126,7 +126,7 @@ export default class ExpressServer {
     );
     const azureAuthProvider = new TokenCredentialAuthenticationProvider(
       azureCredential,
-      { scopes: ['https://graph.microsoft.com/.default'] }
+      {scopes: ['https://graph.microsoft.com/.default']}
     );
     this.app.locals.msGraphClient = Client.initWithMiddleware({
       authProvider: azureAuthProvider,
