@@ -288,11 +288,13 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     );
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
-      id: refreshToken,
-      email: 'existing@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: expireAt.toISOString(),
+      });
 
     // Request
     let response = await request(testEnv.expressServer.app)
@@ -400,11 +402,13 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     );
     let expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
-      id: refreshToken,
-      email: 'locked@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'locked@wisc.edu',
+        expireAt: expireAt.toISOString(),
+      });
     // Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
@@ -427,11 +431,13 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     });
     expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
-      id: refreshToken,
-      email: 'deleted@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'deleted@wisc.edu',
+        expireAt: expireAt.toISOString(),
+      });
     // Request
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
@@ -454,11 +460,13 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     });
     expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
-      id: refreshToken,
-      email: 'notexisting@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'notexisting@wisc.edu',
+        expireAt: expireAt.toISOString(),
+      });
     // Request
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
@@ -559,11 +567,13 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     );
     const tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
-    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
-      id: refreshToken,
-      email: 'existing@wisc.edu',
-      expireAt: tokenExpireAt.toISOString(),
-    });
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
 
     // Request
     const response = await request(testEnv.expressServer.app)
@@ -611,11 +621,13 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     );
     const tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 3);
-    testEnv.dbClient.container('refreshToken').items.create<RefreshToken>({
-      id: refreshToken,
-      email: 'existing@wisc.edu',
-      expireAt: tokenExpireAt.toISOString(),
-    });
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
 
     // Request
     const response = await request(testEnv.expressServer.app)
