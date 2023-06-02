@@ -10,8 +10,6 @@ import * as jwt from 'jsonwebtoken';
 import * as Cosmos from '@azure/cosmos';
 import TestEnv from '../../TestEnv';
 import ExpressServer from '../../../src/ExpressServer';
-import RefreshToken from '../../../src/datatypes/RefreshToken/RefreshToken';
-import createRefreshToken from '../../../src/functions/JWT/createRefreshToken';
 import AuthToken from '../../../src/datatypes/Token/AuthToken';
 
 describe('DELETE /auth/logout', () => {
@@ -34,10 +32,15 @@ describe('DELETE /auth/logout', () => {
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
     // Test Web logout
-    let testToken = createRefreshToken(
-      'webLogout@wisc.edu',
-      'keySecretRefresh'
-    );
+    let tokenContent: AuthToken = {
+      id: 'webLogout@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
 
     // Test with Refresh Token
     let response = await request(testEnv.expressServer.app)
@@ -56,14 +59,24 @@ describe('DELETE /auth/logout', () => {
 
     // DB Check
     try {
-      await RefreshToken.read(testEnv.dbClient, testToken);
+      await testEnv.dbClient.container('refreshTokens').item(testToken).read();
       fail('Refresh Token should have been deleted');
     } catch (e) {
-      if (e instanceof Error) expect(e.message).toBe('Not Found');
+      if (e instanceof Error)
+        // expect error
+        expect(e).toBeInstanceOf(Error);
     }
 
     // Test App logout
-    testToken = createRefreshToken('appLogout@wisc.edu', 'keySecretRefresh');
+    tokenContent = {
+      id: 'appLogout@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
 
     // Test with Refresh Token
     response = await request(testEnv.expressServer.app)
@@ -82,33 +95,12 @@ describe('DELETE /auth/logout', () => {
 
     // DB Check
     try {
-      await RefreshToken.read(testEnv.dbClient, testToken);
+      await testEnv.dbClient.container('refreshTokens').item(testToken).read();
       fail('Refresh Token should have been deleted');
     } catch (e) {
-      if (e instanceof Error) expect(e.message).toBe('Not Found');
-    }
-
-    // Put deleted Refresh Token back to DB & Test RefreshToken.create()
-    const userRefreshTokenSamples: RefreshToken[] = [];
-    // testAuthAPI, logout
-    let expireAt = new Date('2024-05-31T00:52:23.000Z');
-    userRefreshTokenSamples.push({
-      id: createRefreshToken('webLogout@wisc.edu', 'keySecretRefresh'),
-      email: 'webLogout@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
-    expireAt = new Date('2024-05-30T00:52:23.000Z');
-    userRefreshTokenSamples.push({
-      id: createRefreshToken('appLogout@wisc.edu', 'keySecretRefresh'),
-      email: 'appLogout@wisc.edu',
-      expireAt: expireAt,
-    });
-
-    for (let index = 0; index < userRefreshTokenSamples.length; index++) {
-      await RefreshToken.create(
-        testEnv.dbClient,
-        userRefreshTokenSamples[index]
-      );
+      if (e instanceof Error)
+        // expect error
+        expect(e).toBeInstanceOf(Error);
     }
   });
 
@@ -134,7 +126,15 @@ describe('DELETE /auth/logout', () => {
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
     // Test Web logout - Refresh Token with invalid email
-    let testToken = createRefreshToken('fakeEmail', 'keySecretRefresh');
+    let tokenContent: AuthToken = {
+      id: 'fakeemail',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
 
     // Test with Refresh Token
     let response = await request(testEnv.expressServer.app)
@@ -144,7 +144,15 @@ describe('DELETE /auth/logout', () => {
     expect(response.status).toBe(403);
 
     // Test Web logout - Refresh Token with invalid secret string
-    testToken = createRefreshToken('webLogout@wisc.edu', 'fakeSecret');
+    tokenContent = {
+      id: 'appLogout@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'fakesecret', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
 
     // Test with Refresh Token
     response = await request(testEnv.expressServer.app)

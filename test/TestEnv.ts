@@ -18,7 +18,8 @@ import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
 import {AccountType} from '../src/datatypes/Token/AuthToken';
 import RefreshToken from '../src/datatypes/RefreshToken/RefreshToken';
-import createRefreshToken from '../src/functions/JWT/createRefreshToken';
+import AuthToken from '../src/datatypes/Token/AuthToken';
+import * as jwt from 'jsonwebtoken';
 
 /**
  * Class for Test Environment
@@ -126,7 +127,6 @@ export default class TestEnv {
           {path: '/"_etag"/?'},
         ],
       },
-      // TODO: Unique key policy? not sure if we need it
     });
     /* istanbul ignore next */
     if (containerOps.statusCode !== 201) {
@@ -134,16 +134,35 @@ export default class TestEnv {
     }
     // refreshToken data
     const userRefreshTokenSamples: RefreshToken[] = [];
-    // testAuthAPI, logout
-    let expireAt = new Date('2024-05-31T00:52:23.000Z');
+    // testAuthAPI, user - logout
+    // Generate RefreshToken
+    let tokenContent: AuthToken = {
+      id: 'webLogout@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
+    let expireAt = new Date(Date.now() + 60 * 60 * 1000);
     userRefreshTokenSamples.push({
-      id: createRefreshToken('webLogout@wisc.edu', 'keySecretRefresh'),
+      id: testToken,
       email: 'webLogout@wisc.edu',
       expireAt: expireAt.toISOString(),
     });
-    expireAt = new Date('2024-05-30T00:52:23.000Z');
+    tokenContent = {
+      id: 'appLogout@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
+    expireAt = new Date(Date.now() + 60 * 60 * 1000);
     userRefreshTokenSamples.push({
-      id: createRefreshToken('appLogout@wisc.edu', 'keySecretRefresh'),
+      id: testToken,
       email: 'appLogout@wisc.edu',
       expireAt: expireAt.toISOString(),
     });
