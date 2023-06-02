@@ -5,7 +5,7 @@
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
  */
 
-import {Request} from 'express';
+import { Request } from 'express';
 import NotFoundError from '../src/exceptions/NotFoundError';
 import User from '../src/datatypes/User/User';
 
@@ -13,9 +13,8 @@ import User from '../src/datatypes/User/User';
 jest.mock('../src/datatypes/User/getUserProfile', () => ({
   __esModule: true,
   default: jest
-    .fn()
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    .mockImplementation(async (email: string, _req: Request) => {
+    .fn(async (email: string, _req: Request) => {
       let returnValue: User;
       switch (email) {
         case 'existing@wisc.edu':
@@ -31,7 +30,7 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
             graduationYear: 2026,
             tncVersion: 'v1.0.2',
           };
-          break;
+          return returnValue;
         case 'locked@wisc.edu':
           returnValue = {
             email: 'locked@wisc.edu',
@@ -47,7 +46,7 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
             graduationYear: 2026,
             tncVersion: 'v1.0.2',
           };
-          break;
+          return returnValue;
         case 'deleted@wisc.edu':
           returnValue = {
             email: 'deleted@wisc.edu',
@@ -62,12 +61,11 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
             graduationYear: 2026,
             tncVersion: 'v1.0.2',
           };
-          break;
+          return returnValue;
         default:
           throw new NotFoundError();
       }
-      return returnValue;
-    }),
+    })
 }));
 
 // Mocking Email Sending Module

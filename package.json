@@ -26,7 +26,6 @@
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
     "testTimeout": 120000,
-    "resetMocks": true,
     "setupFiles": [
       "./test/jest.mock.ts"
     ],

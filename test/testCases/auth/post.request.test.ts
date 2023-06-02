@@ -40,23 +40,23 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // Request - Without Origin Header and applicationKey Header
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .send({purpose: 'signup', email: 'someemail@wisc.edu'});
+      .send({ purpose: 'signup', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
     // Request - With wrong Origin Header
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://suspicious.com'})
-      .send({purpose: 'signup', email: 'someemail@wisc.edu'});
+      .set({ Origin: 'https://suspicious.com' })
+      .send({ purpose: 'signup', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
     // Request - With wrong applicationKey Header
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Suspicious-App>'})
-      .send({purpose: 'signup', email: 'someemail@wisc.edu'});
+      .set({ 'X-APPLICATION-KEY': '<Suspicious-App>' })
+      .send({ purpose: 'signup', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
@@ -77,28 +77,28 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // Request with missing properties
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
-      .send({purpose: 'signup'});
+      .set({ Origin: 'https://collegemate.app' })
+      .send({ purpose: 'signup' });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({email: 'someemail@wisc.edu'});
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .send({ email: 'someemail@wisc.edu' });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
 
     // Request with additional properties
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
-      .send({purpose: 'signup', email: 'someemail@wisc.edu', admin: true});
+      .set({ Origin: 'https://collegemate.app' })
+      .send({ purpose: 'signup', email: 'someemail@wisc.edu', admin: true });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({purpose: 'signup', email: 'someemail@wisc.edu', admin: true});
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .send({ purpose: 'signup', email: 'someemail@wisc.edu', admin: true });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
 
@@ -119,14 +119,14 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // Request with not supported purpose
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
-      .send({purpose: 'createNewAccount', email: 'someemail@wisc.edu'});
+      .set({ Origin: 'https://collegemate.app' })
+      .send({ purpose: 'createNewAccount', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({purpose: 'admin', email: 'someemail@wisc.edu'});
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .send({ purpose: 'admin', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
 
@@ -147,14 +147,14 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // sudo purpose request without refreshToken
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
-      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+      .set({ Origin: 'https://collegemate.app' })
+      .send({ purpose: 'sudo', email: 'existing@wisc.edu' });
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Unauthenticated');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .send({ purpose: 'sudo', email: 'existing@wisc.edu' });
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Unauthenticated');
 
@@ -168,7 +168,7 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     const refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
-      {algorithm: 'HS512', expiresIn: '180m'}
+      { algorithm: 'HS512', expiresIn: '180m' }
     );
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
@@ -186,16 +186,16 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // Request
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
+      .set({ Origin: 'https://collegemate.app' })
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
-      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+      .send({ purpose: 'sudo', email: 'existing@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
-      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+      .send({ purpose: 'sudo', email: 'existing@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
@@ -222,7 +222,7 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     const refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
-      {algorithm: 'HS512', expiresIn: '180m'}
+      { algorithm: 'HS512', expiresIn: '180m' }
     );
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
@@ -235,16 +235,16 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
+      .set({ Origin: 'https://collegemate.app' })
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
-      .send({purpose: 'sudo', email: 'someemail@wisc.edu'});
+      .send({ purpose: 'sudo', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
-      .send({purpose: 'sudo', email: 'someemail@wisc.edu'});
+      .send({ purpose: 'sudo', email: 'someemail@wisc.edu' });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
@@ -265,14 +265,14 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     // Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({Origin: 'https://collegemate.app'})
-      .send({purpose: 'signup', email: 'existing@wisc.edu'});
+      .set({ Origin: 'https://collegemate.app' })
+      .send({ purpose: 'signup', email: 'existing@wisc.edu' });
     expect(response.status).toBe(409);
     expect(response.body.error).toBe('Conflict');
     response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({purpose: 'signup', email: 'deleted@wisc.edu'});
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .send({ purpose: 'signup', email: 'deleted@wisc.edu' });
     expect(response.status).toBe(409);
     expect(response.body.error).toBe('Conflict');
 
@@ -287,7 +287,37 @@ describe('POST /auth/request - Initiate OTP Request', () => {
   });
 
   test('Fail - signin purpose request with not existing email or deleted/locked email', async () => {
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .send({ purpose: 'signin', email: 'locked@wisc.edu' });
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthenticated - Locked User');
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({ 'X-APPLICATION-KEY': '<iOS-App-v1>' })
+      .send({ purpose: 'signin', email: 'deleted@wisc.edu' });
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthenticated - Deleted User');
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({ Origin: 'https://collegemate.app' })
+      .send({ purpose: 'signin', email: 'notexisting@wisc.edu' });
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthenticated');
+
+    // DB Checks
+    const dbQuery = await testEnv.dbClient
+      .container('otp')
+      .items.query({
+        query: 'SELECT * FROM otp',
+      })
+      .fetchAll();
+    expect(dbQuery.resources.length).toBe(0);
   });
 
   test('Fail - sudo purpose request with not existing email or deleted/locked email', async () => {

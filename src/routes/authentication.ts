@@ -6,7 +6,7 @@
 
 import * as express from 'express';
 import * as Cosmos from '@azure/cosmos';
-import {Client} from '@microsoft/microsoft-graph-client';
+import { Client } from '@microsoft/microsoft-graph-client';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
 import getUserProfile from '../datatypes/User/getUserProfile';
@@ -17,11 +17,11 @@ import BadRequestError from '../exceptions/BadRequestError';
 import ConflictError from '../exceptions/ConflictError';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
-import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
+import { validateInitiateOTPRequest } from '../functions/inputValidator/validateInitiateOTPRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import ServerConfig from '../ServerConfig';
-import {randomInt} from 'crypto';
+import { randomInt } from 'crypto';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -80,7 +80,7 @@ authenticationRouter.post('/request', async (req, res, next) => {
         if (userProfile.deleted) {
           throw new HTTPError(401, 'Unauthenticated - Deleted User');
         } else if (userProfile.locked) {
-          throw new HTTPError(401, 'Unauthenticated - Locked Use');
+          throw new HTTPError(401, 'Unauthenticated - Locked User');
         }
       }
     } catch (e) {
@@ -139,7 +139,7 @@ authenticationRouter.post('/request', async (req, res, next) => {
       codeExpireAt: expireAt.toISOString(),
       shouldRenewToken:
         refreshTokenVerifyResult !== undefined &&
-        refreshTokenVerifyResult.aboutToExpire
+          refreshTokenVerifyResult.aboutToExpire
           ? true
           : undefined,
     });
