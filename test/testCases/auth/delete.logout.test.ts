@@ -11,6 +11,8 @@ import * as Cosmos from '@azure/cosmos';
 import TestEnv from '../../TestEnv';
 import ExpressServer from '../../../src/ExpressServer';
 import AuthToken from '../../../src/datatypes/Token/AuthToken';
+import RefreshToken from '../../../src/datatypes/RefreshToken/RefreshToken';
+import invalidateToken from '../../utils/invalidateRefreshToken';
 
 describe('DELETE /auth/logout', () => {
   let testEnv: TestEnv;
@@ -33,7 +35,7 @@ describe('DELETE /auth/logout', () => {
 
     // Test Web logout
     let tokenContent: AuthToken = {
-      id: 'webLogout@wisc.edu',
+      id: 'existing@wisc.edu',
       type: 'refresh',
       tokenType: 'user',
     };
@@ -41,6 +43,17 @@ describe('DELETE /auth/logout', () => {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
+    let expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    let testTokenObj = new RefreshToken(
+      testToken,
+      'existing@wisc.edu',
+      expireAt
+    );
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
 
     // Test with Refresh Token
     let response = await request(testEnv.expressServer.app)
@@ -62,21 +75,26 @@ describe('DELETE /auth/logout', () => {
       await testEnv.dbClient.container('refreshTokens').item(testToken).read();
       fail('Refresh Token should have been deleted');
     } catch (e) {
-      if (e instanceof Error)
-        // expect error
-        expect(e).toBeInstanceOf(Error);
+      if (e instanceof Error) expect(e).toBeDefined();
     }
 
     // Test App logout
     tokenContent = {
-      id: 'appLogout@wisc.edu',
+      id: 'existing@wisc.edu',
       type: 'refresh',
       tokenType: 'user',
     };
     testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
-      expiresIn: '60m',
+      expiresIn: '180m',
     });
+    expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testTokenObj = new RefreshToken(testToken, 'existing@wisc.edu', expireAt);
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
 
     // Test with Refresh Token
     response = await request(testEnv.expressServer.app)
@@ -98,9 +116,7 @@ describe('DELETE /auth/logout', () => {
       await testEnv.dbClient.container('refreshTokens').item(testToken).read();
       fail('Refresh Token should have been deleted');
     } catch (e) {
-      if (e instanceof Error)
-        // expect error
-        expect(e).toBeInstanceOf(Error);
+      if (e instanceof Error) expect(e).toBeDefined();
     }
   });
 
@@ -122,13 +138,91 @@ describe('DELETE /auth/logout', () => {
   });
 
   test('Fail: Expired Refresh Token', async () => {
-    // TODO
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Test Web logout
+    const tokenContent: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    const expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    const testTokenObj = new RefreshToken(
+      testToken,
+      'existing@wisc.edu',
+      expireAt
+    );
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+
+    // Invalidate Token
+    expect(await invalidateToken(testEnv.dbClient, 180)).toBeGreaterThanOrEqual(
+      1
+    );
+
+    // Test with Refresh Token
+    const response = await request(testEnv.expressServer.app)
+      .delete('/auth/logout')
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set({Origin: 'https://collegemate.app'});
+    expect(response.status).toBe(403);
   });
 
   test('Fail: Already Logged out', async () => {
-    // TODO
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Test Web logout
+    const tokenContent: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    const expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    const testTokenObj = new RefreshToken(
+      testToken,
+      'existing@wisc.edu',
+      expireAt
+    );
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+
+    // (First Logout) Test with Refresh Token
+    let response = await request(testEnv.expressServer.app)
+      .delete('/auth/logout')
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set({Origin: 'https://collegemate.app'});
+    expect(response.status).toBe(200);
+
+    // Cookie Clear Check
+    let cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
+    expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
+    expect(cookie[1]).toBe('');
+    cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
+    expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
+    expect(cookie[1]).toBe('');
+
+    // (Second Logout) Test with Refresh Token
+    response = await request(testEnv.expressServer.app)
+      .delete('/auth/logout')
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set({Origin: 'https://collegemate.app'});
+    expect(response.status).toBe(403);
   });
 
   test('Fail: Invalid Refresh Token', async () => {
@@ -137,7 +231,7 @@ describe('DELETE /auth/logout', () => {
 
     // Test Web logout - Refresh Token with invalid email
     let tokenContent: AuthToken = {
-      id: 'fakeemail',
+      id: 'fakeemail@wisc.edu',
       type: 'refresh',
       tokenType: 'user',
     };
@@ -200,10 +294,41 @@ describe('DELETE /auth/logout', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
+    const tokenContent: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    const expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    const testTokenObj = new RefreshToken(
+      testToken,
+      'existing@wisc.edu',
+      expireAt
+    );
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+
     // Test with Refresh Token
-    const response = await request(testEnv.expressServer.app)
+    let response = await request(testEnv.expressServer.app)
       .delete('/auth/logout')
-      .set({Origin: 'wrong origin'});
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set({Origin: 'https://suspicious.app'});
+    expect(response.status).toBe(403);
+    response = await request(testEnv.expressServer.app)
+      .delete('/auth/logout')
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set({'X-APPLICATION-KEY': 'WrongKey'});
+    expect(response.status).toBe(403);
+    response = await request(testEnv.expressServer.app)
+      .delete('/auth/logout')
+      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`]);
     expect(response.status).toBe(403);
   });
 });

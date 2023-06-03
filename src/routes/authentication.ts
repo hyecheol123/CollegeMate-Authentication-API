@@ -171,7 +171,7 @@ authenticationRouter.delete('/logout', async (req, res, next) => {
     try {
       await RefreshToken.delete(dbClient, refreshToken);
     } catch (e) {
-      // istanbul ignore if
+      // istanbul ignore next
       if ((e as HTTPError).statusCode !== 404) {
         throw e;
       }

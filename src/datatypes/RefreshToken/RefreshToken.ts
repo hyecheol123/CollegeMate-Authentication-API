@@ -81,7 +81,7 @@ export default class RefreshToken {
     try {
       await dbClient.container(REFRESH_TOKEN).item(refreshToken).delete();
     } catch (e) {
-      // istanbul ignore else
+      // istanbul ignore next
       if ((e as Cosmos.ErrorResponse).code === 404) {
         throw new NotFoundError();
       } else {
