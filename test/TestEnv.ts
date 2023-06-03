@@ -17,9 +17,6 @@ import TestConfig from './TestConfig';
 import ExpressServer from '../src/ExpressServer';
 import ServerAdminKey from '../src/datatypes/ServerAdminKey/ServerAdminKey';
 import {AccountType} from '../src/datatypes/Token/AuthToken';
-import RefreshToken from '../src/datatypes/RefreshToken/RefreshToken';
-import AuthToken from '../src/datatypes/Token/AuthToken';
-import * as jwt from 'jsonwebtoken';
 
 /**
  * Class for Test Environment
@@ -121,9 +118,25 @@ export default class TestEnv {
         indexingMode: 'consistent',
         automatic: true,
         includedPaths: [{path: '/*'}],
+        excludedPaths: [{path: '/"_etag"/?'}],
+      },
+    });
+    /* istanbul ignore next */
+    if (containerOps.statusCode !== 201) {
+      throw new Error(JSON.stringify(containerOps));
+    }
+    // refreshToken data is created whenever needed
+
+    // otp container
+    containerOps = await this.dbClient.containers.create({
+      id: 'otp',
+      indexingPolicy: {
+        indexingMode: 'consistent',
+        automatic: true,
+        includedPaths: [{path: '/*'}],
         excludedPaths: [
-          {path: '/expireAt/?'},
-          {path: '/email/?'},
+          {path: '/passcode/?'},
+          {path: '/verified/?'},
           {path: '/"_etag"/?'},
         ],
       },
@@ -132,53 +145,22 @@ export default class TestEnv {
     if (containerOps.statusCode !== 201) {
       throw new Error(JSON.stringify(containerOps));
     }
-    // refreshToken data
-    const userRefreshTokenSamples: RefreshToken[] = [];
-    // testAuthAPI, user - logout
-    // Generate RefreshToken
-    let tokenContent: AuthToken = {
-      id: 'webLogout@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '60m',
-    });
-    let expireAt = new Date(Date.now() + 60 * 60 * 1000);
-    userRefreshTokenSamples.push({
-      id: testToken,
-      email: 'webLogout@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
-    tokenContent = {
-      id: 'appLogout@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '60m',
-    });
-    expireAt = new Date(Date.now() + 60 * 60 * 1000);
-    userRefreshTokenSamples.push({
-      id: testToken,
-      email: 'appLogout@wisc.edu',
-      expireAt: expireAt.toISOString(),
-    });
+    // otp data is generated whenever needed
 
-    for (let index = 0; index < userRefreshTokenSamples.length; index++) {
-      await this.dbClient
-        .container('refreshToken')
-        .items.create(userRefreshTokenSamples[index]);
-    }
+    // SEE ./jest.mock.ts FOR MODULE MOCKING SETUP
 
     // Setup Express Server
     this.expressServer = new ExpressServer(this.testConfig);
+    // Mock initServerAdminAuth function
+    jest
+      .spyOn(ExpressServer.prototype, 'initServerAdminAuth')
+      .mockImplementation();
+    await this.expressServer.initServerAdminAuth(this.testConfig);
   }
 
   /**
    * Teardown test environment after test
+   *  - Remove jest Mock
    *  - Remove used resources (DB)
    *  - close database/redis connection from the express server
    */

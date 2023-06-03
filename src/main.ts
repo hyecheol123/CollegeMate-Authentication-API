@@ -20,11 +20,21 @@ const configInstance = new ServerConfig(
   process.env.DB_ID
 );
 const expressServer = new ExpressServer(configInstance); // express server setup
-
-// Startup the express server
-const {app} = expressServer;
-const server: Server = app.listen(configInstance.expressPort);
-console.log(`Start API Server at port ${configInstance.expressPort}`);
+let server: Server;
+expressServer.initServerAdminAuth(configInstance).then(
+  () => {
+    // Startup the express server
+    const {app} = expressServer;
+    server = app.listen(configInstance.expressPort);
+    console.log(`Start API Server at port ${configInstance.expressPort}`);
+  },
+  error => {
+    console.error('Fail to start API Server');
+    console.error(error);
+    // eslint-disable-next-line no-process-exit
+    process.exit(1);
+  }
+);
 
 // Gracefully shutdown express server
 const shutdown = async (): Promise<void> => {

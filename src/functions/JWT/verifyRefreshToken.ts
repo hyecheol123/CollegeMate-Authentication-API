@@ -45,7 +45,7 @@ export default async function verifyRefreshToken(
     );
     // istanbul ignore if
     if (dbRefreshToken.expireAt < new Date()) {
-      throw new UnauthenticatedError();
+      throw new ForbiddenError();
     }
   } catch (e) {
     // istanbul ignore else

@@ -10,6 +10,11 @@ import * as cookieParser from 'cookie-parser';
 import ServerConfig from './ServerConfig';
 import HTTPError from './exceptions/HTTPError';
 import authenticationRouter from './routes/authentication';
+import createServerAdminToken from './functions/JWT/createServerAdminToken';
+import ServerAdminKey from './datatypes/ServerAdminKey/ServerAdminKey';
+import {Client} from '@microsoft/microsoft-graph-client';
+import {ClientSecretCredential} from '@azure/identity';
+import {TokenCredentialAuthenticationProvider} from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 
 /**
  * Class contains Express Application and other relevant instances/functions
@@ -90,6 +95,55 @@ export default class ExpressServer {
     this.app.use((_req, res) => {
       res.status(404).send({error: 'Not Found'});
     });
+  }
+
+  /**
+   * Method to initialize serverAdminAuthentication information asyncronously.
+   *
+   * @param config Server's configuration variables
+   */
+  // istanbul ignore next
+  async initServerAdminAuth(config: ServerConfig): Promise<void> {
+    // Set serverAdminKey and serverAdminToken
+    this.app.set('serverAdminKey', config.serverAdminKey);
+    const serverAdminKeyInfo = await ServerAdminKey.read(
+      this.app.locals.dbClient,
+      config.serverAdminKey
+    );
+    this.app.set(
+      'serverAdminToken',
+      createServerAdminToken(
+        serverAdminKeyInfo.nickname,
+        serverAdminKeyInfo.accountType,
+        config.jwt.secretKey
+      )
+    );
+
+    // Azure App Registration Authentication Information (For Microsoft Graph API)
+    const azureCredential = new ClientSecretCredential(
+      config.azureAppRegistrationInfo.tenantId,
+      config.azureAppRegistrationInfo.clientId,
+      config.azureAppRegistrationInfo.clientSecret
+    );
+    const azureAuthProvider = new TokenCredentialAuthenticationProvider(
+      azureCredential,
+      {scopes: ['https://graph.microsoft.com/.default']}
+    );
+    this.app.locals.msGraphClient = Client.initWithMiddleware({
+      authProvider: azureAuthProvider,
+    });
+    this.app.set(
+      'azureUserObjId',
+      config.azureAppRegistrationInfo.userObjectId
+    );
+    this.app.set(
+      'noReplyEmailAddress',
+      config.azureAppRegistrationInfo.noReplyEmailAddress
+    );
+    this.app.set(
+      'mainEmailAddress',
+      config.azureAppRegistrationInfo.mainEmailAddress
+    );
   }
 
   /**
