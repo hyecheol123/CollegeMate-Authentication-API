@@ -2,6 +2,7 @@
  * Define type and CRUD methods for each refreshToken entry
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
+ * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 import * as Cosmos from '@azure/cosmos';
@@ -65,5 +66,27 @@ export default class RefreshToken {
       dbOps.resource.email,
       new Date(dbOps.resource.expireAt)
     );
+  }
+
+  /**
+   * Delete entry in RefreshToken container
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @param {string} refreshToken refreshToken
+   */
+  static async delete(
+    dbClient: Cosmos.Database,
+    refreshToken: string
+  ): Promise<void> {
+    try {
+      await dbClient.container(REFRESH_TOKEN).item(refreshToken).delete();
+    } catch (e) {
+      // istanbul ignore next
+      if ((e as Cosmos.ErrorResponse).code === 404) {
+        throw new NotFoundError();
+      } else {
+        throw e;
+      }
+    }
   }
 }

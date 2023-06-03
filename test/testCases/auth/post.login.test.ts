@@ -16,10 +16,6 @@ import AuthToken from '../../../src/datatypes/Token/AuthToken';
 describe('POST /auth/login - Get Server/Admin Authentication Token (Server Use Only)', () => {
   let testEnv: TestEnv;
 
-  beforeAll(() => {
-    jest.setTimeout(120000);
-  });
-
   beforeEach(async () => {
     // Setup TestEnv
     testEnv = new TestEnv(expect.getState().currentTestName as string);

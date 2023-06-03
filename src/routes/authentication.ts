@@ -7,22 +7,23 @@
 import * as express from 'express';
 import * as Cosmos from '@azure/cosmos';
 import {Client} from '@microsoft/microsoft-graph-client';
+import {randomInt} from 'crypto';
+import ServerConfig from '../ServerConfig';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
+import User from '../datatypes/User/User';
 import getUserProfile from '../datatypes/User/getUserProfile';
+import RefreshToken from '../datatypes/RefreshToken/RefreshToken';
+import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import HTTPError from '../exceptions/HTTPError';
 import UnauthenticatedError from '../exceptions/UnauthenticatedError';
 import ForbiddenError from '../exceptions/ForbiddenError';
 import BadRequestError from '../exceptions/BadRequestError';
 import ConflictError from '../exceptions/ConflictError';
-import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
+import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
-import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
-import ServerConfig from '../ServerConfig';
-import {randomInt} from 'crypto';
-import User from '../datatypes/User/User';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -55,9 +56,9 @@ authenticationRouter.post('/request', async (req, res, next) => {
     let refreshTokenVerifyResult: RefreshTokenVerifyResult | undefined;
     if (initiateOTPRequestBody.purpose === 'sudo') {
       refreshTokenVerifyResult = await verifyRefreshToken(
+        dbClient,
         req,
-        req.app.get('jwtRefreshKey'),
-        dbClient
+        req.app.get('jwtRefreshKey')
       );
       if (
         refreshTokenVerifyResult.content.id !== initiateOTPRequestBody.email
@@ -144,6 +145,42 @@ authenticationRouter.post('/request', async (req, res, next) => {
           ? true
           : undefined,
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// DELETE: /auth/logout
+authenticationRouter.delete('/logout', async (req, res, next) => {
+  const dbClient: Cosmos.Database = req.app.locals.dbClient;
+
+  try {
+    // Check Origin/applicationKey
+    if (
+      req.header('Origin') !== req.app.get('webpageOrigin') &&
+      !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
+    ) {
+      throw new ForbiddenError();
+    }
+
+    // Cookies check - refreshToken
+    await verifyRefreshToken(dbClient, req, req.app.get('jwtRefreshKey'));
+    const refreshToken = req.cookies['X-REFRESH-TOKEN'];
+
+    // DB Operation - Delete refresh token and access token
+    try {
+      await RefreshToken.delete(dbClient, refreshToken);
+    } catch (e) {
+      // istanbul ignore next
+      if ((e as HTTPError).statusCode !== 404) {
+        throw e;
+      }
+    }
+
+    // Send response - 200: Response Header cookie set
+    res.clearCookie('X-ACCESS-TOKEN', {httpOnly: true, maxAge: 0});
+    res.clearCookie('X-REFRESH-TOKEN', {httpOnly: true, maxAge: 0});
+    res.status(200).send();
   } catch (e) {
     next(e);
   }
