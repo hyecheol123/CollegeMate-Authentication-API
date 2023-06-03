@@ -5,7 +5,7 @@
  */
 
 import * as jwt from 'jsonwebtoken';
-import AuthToken, {JWTObject} from '../../datatypes/AuthToken';
+import AuthToken, {JWTObject} from '../../datatypes/Token/AuthToken';
 import ForbiddenError from '../../exceptions/ForbiddenError';
 import checkAccountType from '../inputValidator/checkAccountType';
 

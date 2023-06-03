@@ -25,10 +25,23 @@
     "transform": {
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
-    "testTimeout": 120000
+    "testTimeout": 120000,
+    "setupFiles": [
+      "./test/jest.mock.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/datatypes/User/getUserProfile.ts",
+      "!src/ServerConfigExample.ts",
+      "!src/main.ts",
+      "!src/utilsRunner/*",
+      "!src/functions/utils/sendOTPCodeMail.ts"
+    ]
   },
   "scripts": {
+    "prebuild": "npm run clean",
     "build": "tsc",
+    "postbuild": "copyfiles -u 1 src/**/*.ejs dist/",
     "clean": "gts clean",
     "lint": "gts lint",
     "lint:fix": "gts fix",
@@ -49,23 +62,30 @@
     "node": ">=14"
   },
   "devDependencies": {
+    "@microsoft/microsoft-graph-types": "^2.33.0",
     "@types/cookie-parser": "^1.4.3",
+    "@types/ejs": "^3.1.2",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.1",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.2.5",
     "@types/supertest": "^2.0.12",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "gts": "^3.1.1",
     "jest": "^29.5.0",
-    "mockdate": "^3.0.5",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "typescript": "^5.0.4"
   },
   "dependencies": {
     "@azure/cosmos": "^3.17.3",
+    "@azure/identity": "^3.2.2",
+    "@microsoft/microsoft-graph-client": "^3.0.5",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
     "cookie-parser": "^1.4.6",
+    "ejs": "^3.1.9",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0"
   }

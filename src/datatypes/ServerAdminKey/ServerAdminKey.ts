@@ -7,16 +7,11 @@
 import * as Cosmos from '@azure/cosmos';
 import HTTPError from '../../exceptions/HTTPError';
 import NotFoundError from '../../exceptions/NotFoundError';
-import {AccountType} from '../AuthToken';
+import MetaData from './MetaData';
+import {AccountType} from '../Token/AuthToken';
 
 // DB Container id
 const SERVER_ADMIN_KEY = 'serverAdminKey';
-
-export type MetaData = {
-  nickname: string;
-  generatedAt: Date | string;
-  accountType: string;
-};
 
 export default class ServerAdminKey {
   id: string;
