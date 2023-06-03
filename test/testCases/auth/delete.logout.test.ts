@@ -39,7 +39,7 @@ describe('DELETE /auth/logout', () => {
     };
     let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
-      expiresIn: '60m',
+      expiresIn: '180m',
     });
 
     // Test with Refresh Token
@@ -121,6 +121,16 @@ describe('DELETE /auth/logout', () => {
     expect(response.status).toBe(401);
   });
 
+  test('Fail: Expired Refresh Token', async () => {
+    // TODO
+    fail();
+  });
+
+  test('Fail: Already Logged out', async () => {
+    // TODO
+    fail();
+  });
+
   test('Fail: Invalid Refresh Token', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
@@ -133,7 +143,7 @@ describe('DELETE /auth/logout', () => {
     };
     let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
-      expiresIn: '60m',
+      expiresIn: '180m',
     });
 
     // Test with Refresh Token
@@ -151,7 +161,7 @@ describe('DELETE /auth/logout', () => {
     };
     testToken = jwt.sign(tokenContent, 'fakesecret', {
       algorithm: 'HS512',
-      expiresIn: '60m',
+      expiresIn: '180m',
     });
 
     // Test with Refresh Token

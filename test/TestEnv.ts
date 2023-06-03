@@ -8,7 +8,6 @@
  *  - Remove used table and close database connection from the express server
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
- * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 import * as crypto from 'crypto';

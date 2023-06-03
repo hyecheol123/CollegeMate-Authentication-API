@@ -14,10 +14,18 @@ import ForbiddenError from '../../exceptions/ForbiddenError';
 import RefreshToken from '../../datatypes/RefreshToken/RefreshToken';
 import HTTPError from '../../exceptions/HTTPError';
 
+/**
+ * Function to verify refreshToken
+ *
+ * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+ * @param {Request} req Express request object
+ * @param {string} jwtRefreshKey JWT Secret
+ * @returns
+ */
 export default async function verifyRefreshToken(
+  dbClient: Cosmos.Database,
   req: Request,
-  jwtRefreshKey: string,
-  dbClient: Cosmos.Database
+  jwtRefreshKey: string
 ): Promise<RefreshTokenVerifyResult> {
   if (!('X-REFRESH-TOKEN' in req.cookies)) {
     throw new UnauthenticatedError();
