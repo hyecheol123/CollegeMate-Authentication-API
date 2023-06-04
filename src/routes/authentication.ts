@@ -7,12 +7,12 @@
 import * as express from 'express';
 import * as Cosmos from '@azure/cosmos';
 import {Client} from '@microsoft/microsoft-graph-client';
-import {randomInt} from 'crypto';
 import ServerConfig from '../ServerConfig';
 import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
 import User from '../datatypes/User/User';
 import getUserProfile from '../datatypes/User/getUserProfile';
+import getTnC from '../datatypes/TNC/getTnC';
 import RefreshToken from '../datatypes/RefreshToken/RefreshToken';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
 import HTTPError from '../exceptions/HTTPError';
@@ -28,7 +28,7 @@ import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
 import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateEnterOTPCodeRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
-import getTnC from '../datatypes/TNC/getTnC';
+import getPasscode from '../functions/utils/getPasscode';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -107,9 +107,7 @@ authenticationRouter.post('/request', async (req, res, next) => {
     // DB Operation
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 3);
-    const passcode = randomInt(0, 1000000)
-      .toString()
-      .padStart(6, randomInt(0, 10).toString());
+    const passcode = getPasscode();
     const id = ServerConfig.hash(
       initiateOTPRequestBody.email,
       initiateOTPRequestBody.purpose,
