@@ -20,10 +20,15 @@ import UnauthenticatedError from '../exceptions/UnauthenticatedError';
 import ForbiddenError from '../exceptions/ForbiddenError';
 import BadRequestError from '../exceptions/BadRequestError';
 import ConflictError from '../exceptions/ConflictError';
+import PasscodeNotMatchError from '../exceptions/PasscodeNotMatchError';
 import createServerAdminToken from '../functions/JWT/createServerAdminToken';
+import createAccessToken from '../functions/JWT/createAccessToken';
+import createRefreshToken from '../functions/JWT/createRefreshToken';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
 import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
+import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateEnterOTPCodeRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
+import getTnC from '../datatypes/TNC/getTnC';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -149,6 +154,178 @@ authenticationRouter.post('/request', async (req, res, next) => {
     next(e);
   }
 });
+
+// POST: /auth/request/{requestId}/code
+authenticationRouter.post(
+  '/request/:requestId/code',
+  async (req, res, next) => {
+    const dbClient: Cosmos.Database = req.app.locals.dbClient;
+    const requestId = req.params.requestId;
+
+    try {
+      // Check Origin/applicationKey
+      if (
+        req.header('Origin') !== req.app.get('webpageOrigin') &&
+        !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
+      ) {
+        throw new ForbiddenError();
+      }
+
+      // Check Request Body
+      type EnterOTPCodeRequest = {
+        email: string;
+        passcode: string;
+        staySignedIn?: boolean;
+      };
+      const enterOTPCodeRequestBody: EnterOTPCodeRequest = req.body;
+      if (!validateEnterOTPCodeRequest(enterOTPCodeRequestBody)) {
+        throw new BadRequestError();
+      }
+      if (
+        !req.app
+          .get('applicationKey')
+          .includes(req.header('X-APPLICATION-KEY')) && // Not Mobile
+        enterOTPCodeRequestBody.staySignedIn !== undefined // Should not be set
+      ) {
+        throw new BadRequestError();
+      }
+
+      // Check OTP DB Container (Match email)
+      const otpObject = await OTP.read(dbClient, requestId);
+      if (otpObject.email !== enterOTPCodeRequestBody.email) {
+        throw new BadRequestError();
+      }
+      if (otpObject.verified || (otpObject.expireAt as Date) < new Date()) {
+        throw new ConflictError();
+      }
+
+      // Check refreshToken if needed (sudo purpose)
+      let refreshTokenVerifyResult: RefreshTokenVerifyResult | undefined;
+      if (otpObject.purpose === 'sudo') {
+        refreshTokenVerifyResult = await verifyRefreshToken(
+          dbClient,
+          req,
+          req.app.get('jwtRefreshKey')
+        );
+        if (
+          refreshTokenVerifyResult.content.id !==
+            enterOTPCodeRequestBody.email ||
+          refreshTokenVerifyResult.content.id !== otpObject.email
+        ) {
+          throw new ForbiddenError();
+        }
+      }
+
+      // Retrieve user information (USER API)
+      let userProfile: User | undefined = undefined;
+      try {
+        userProfile = await getUserProfile(otpObject.email, req);
+      } catch (e) {
+        // istanbul ignore else
+        if ((e as HTTPError).statusCode === 404) {
+          // signin and sudo should have user information in the database
+          if (otpObject.purpose === 'signin' || otpObject.purpose === 'sudo') {
+            throw new UnauthenticatedError();
+          }
+        } else {
+          throw e;
+        }
+      }
+      if (userProfile) {
+        if (otpObject.purpose === 'signup') {
+          // signup - should not have user information in the database
+          throw new ConflictError();
+        } else {
+          // If signin and sudo request from delete or locked user, throw error.
+          if (userProfile.deleted || userProfile.locked) {
+            throw new UnauthenticatedError();
+          }
+        }
+      }
+
+      // Match Passcode
+      const hashedPasscode = ServerConfig.hash(
+        otpObject.email,
+        otpObject.purpose,
+        enterOTPCodeRequestBody.passcode
+      );
+      if (hashedPasscode !== otpObject.passcode) {
+        throw new PasscodeNotMatchError();
+      }
+
+      // DB Operations - Update verified tag
+      const verificationExpiresAt = new Date();
+      verificationExpiresAt.setMinutes(verificationExpiresAt.getMinutes() + 10);
+      await OTP.updateSetVerified(dbClient, requestId);
+
+      // Create new tokens (signin and signup)
+      const tokens = {access: '', refresh: ''};
+      let refreshTokenExpiresAfter = 0;
+      if (otpObject.purpose === 'signup') {
+        refreshTokenExpiresAfter = 60;
+      } else {
+        refreshTokenExpiresAfter = enterOTPCodeRequestBody.staySignedIn
+          ? 60 * 24 * 30
+          : 180;
+      }
+      if (otpObject.purpose === 'signin' || otpObject.purpose === 'signup') {
+        tokens.access = createAccessToken(
+          otpObject.email,
+          req.app.get('jwtAccessKey')
+        );
+        tokens.refresh = await createRefreshToken(
+          dbClient,
+          otpObject.email,
+          req.app.get('jwtRefreshKey'),
+          refreshTokenExpiresAfter
+        );
+      }
+
+      // Retrieve most recent TNC Version (Miscellaneous API / signin)
+      let needNewTNCAccpet: boolean | undefined = undefined;
+      if (otpObject.purpose === 'signin' && userProfile) {
+        try {
+          const recentTnC = await getTnC(req);
+          if (userProfile.tncVersion < recentTnC.version) {
+            needNewTNCAccpet = true;
+          }
+        } catch (e) {
+          // If 404, ignore the error
+          if ((e as HTTPError).statusCode !== 404) {
+            throw e;
+          }
+        }
+      }
+
+      // Response
+      if (otpObject.purpose === 'sudo') {
+        res.status(200).json({
+          verificationExpiresAt: verificationExpiresAt.toISOString(),
+          shouldRenewToken: refreshTokenVerifyResult?.aboutToExpire
+            ? true
+            : undefined,
+        });
+      } else {
+        const cookieOption: express.CookieOptions = {
+          httpOnly: true,
+          maxAge: 10 * 60,
+          secure: true,
+          domain: req.app.get('serverDomain'),
+          sameSite: 'strict',
+        };
+        res.cookie('X-ACCESS-TOKEN', tokens.access, cookieOption);
+        cookieOption.maxAge = refreshTokenExpiresAfter * 60;
+        cookieOption.domain = `api.${req.app.get('serverDomain')}`;
+        res.cookie('X-REFRESH-TOKEN', tokens.refresh, cookieOption);
+        res.status(201).json({
+          needNewTNCAccpet: needNewTNCAccpet ? true : undefined,
+        });
+      }
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 // DELETE: /auth/logout
 authenticationRouter.delete('/logout', async (req, res, next) => {

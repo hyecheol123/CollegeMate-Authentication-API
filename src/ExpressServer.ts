@@ -40,7 +40,7 @@ export default class ExpressServer {
     this.app.set('jwtAccessKey', config.jwt.secretKey);
     this.app.set('jwtRefreshKey', config.jwt.refreshKey);
 
-    // API Server Domain
+    // Server Domain
     this.app.set('serverDomain', config.domainPath.domain);
 
     // Setup Parsers
@@ -49,6 +49,7 @@ export default class ExpressServer {
 
     // Origin and Application Key
     this.app.set('webpageOrigin', config.webpageOrigin);
+    this.app.set('serverApplicationKey', config.serverApplicationKey);
     this.app.set('applicationKey', config.applicationKey);
 
     // Only Allow GET, POST, DELETE, PUT, PATCH method
