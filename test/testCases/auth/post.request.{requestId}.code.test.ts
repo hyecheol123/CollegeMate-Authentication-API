@@ -94,21 +94,21 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Generate OTP Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
-      .send({ purpose: 'signup', email: 'newaccount@wisc.edu' });
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({purpose: 'signup', email: 'newaccount@wisc.edu'});
     expect(response.status).toBe(201);
     expect(response.body.requestId).toBeDefined();
-    const { requestId } = response.body;
+    const {requestId} = response.body;
 
     // Request - Enter OTP Code
     response = await request(testEnv.expressServer.app)
       .post(`/auth/request/${requestId}/code`)
-      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
-      .send({ email: 'newaccount@wisc.edu', passcode: '123456' });
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({email: 'newaccount@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(201);
     expect(response.body.needNewTNCAccpet).toBeUndefined();
     // Check Cookie & Token Information
-    const jwtOption: jwt.VerifyOptions = { algorithms: ['HS512'] };
+    const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
     // Parse Access Token
     let cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
@@ -167,21 +167,21 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Generate OTP Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({ Origin: 'https://collegemate.app' })
-      .send({ purpose: 'signin', email: 'existing@wisc.edu' });
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
     expect(response.status).toBe(201);
     expect(response.body.requestId).toBeDefined();
-    const { requestId } = response.body;
+    const {requestId} = response.body;
 
     // Request - Enter OTP Code
     response = await request(testEnv.expressServer.app)
       .post(`/auth/request/${requestId}/code`)
-      .set({ Origin: 'https://collegemate.app' })
-      .send({ email: 'existing@wisc.edu', passcode: '123456' });
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(201);
     expect(response.body.needNewTNCAccpet).toBeUndefined();
     // Check Cookie & Token Information
-    const jwtOption: jwt.VerifyOptions = { algorithms: ['HS512'] };
+    const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
     // Parse Access Token
     let cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
@@ -240,16 +240,16 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Generate OTP Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
-      .send({ purpose: 'signin', email: 'existing@wisc.edu' });
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
     expect(response.status).toBe(201);
     expect(response.body.requestId).toBeDefined();
-    const { requestId } = response.body;
+    const {requestId} = response.body;
 
     // Request - Enter OTP Code
     response = await request(testEnv.expressServer.app)
       .post(`/auth/request/${requestId}/code`)
-      .set({ 'X-APPLICATION-KEY': '<Android-App-v1>' })
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
       .send({
         email: 'existing@wisc.edu',
         passcode: '123456',
@@ -258,7 +258,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(response.status).toBe(201);
     expect(response.body.needNewTNCAccpet).toBeUndefined();
     // Check Cookie & Token Information
-    const jwtOption: jwt.VerifyOptions = { algorithms: ['HS512'] };
+    const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
     // Parse Access Token
     let cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
@@ -321,21 +321,21 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Generate OTP Request
     let response = await request(testEnv.expressServer.app)
       .post('/auth/request')
-      .set({ Origin: 'https://collegemate.app' })
-      .send({ purpose: 'signin', email: 'old@wisc.edu' });
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'old@wisc.edu'});
     expect(response.status).toBe(201);
     expect(response.body.requestId).toBeDefined();
-    const { requestId } = response.body;
+    const {requestId} = response.body;
 
     // Request - Enter OTP Code
     response = await request(testEnv.expressServer.app)
       .post(`/auth/request/${requestId}/code`)
-      .set({ Origin: 'https://collegemate.app' })
-      .send({ email: 'old@wisc.edu', passcode: '123456' });
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'old@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(201);
     expect(response.body.needNewTNCAccpet).toBe(true);
     // Check Cookie & Token Information
-    const jwtOption: jwt.VerifyOptions = { algorithms: ['HS512'] };
+    const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
     // Parse Access Token
     let cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
