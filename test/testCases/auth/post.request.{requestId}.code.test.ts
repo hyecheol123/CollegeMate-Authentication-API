@@ -73,11 +73,23 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     fail();
   });
 
+  test('Fail - wrong code', () => {
+    fail();
+  });
+
+  test('Fail - signin purpose / Not Mobile with StaySignedIn flag', () => {
+    fail();
+  });
+
   test('Success - signup purpose', () => {
     fail();
   });
 
   test('Success - signin purpose', () => {
+    fail();
+  });
+
+  test('Success - signin purpose / Mobile: Stay Signed In', () => {
     fail();
   });
 
