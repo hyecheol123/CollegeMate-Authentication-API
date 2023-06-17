@@ -261,7 +261,7 @@ authenticationRouter.post(
       let refreshTokenExpiresAfter = 0;
       if (otpObject.purpose === 'signup') {
         refreshTokenExpiresAfter = 60;
-      } else {
+      } else if (otpObject.purpose === 'signin') {
         refreshTokenExpiresAfter = enterOTPCodeRequestBody.staySignedIn
           ? 60 * 24 * 30
           : 180;
