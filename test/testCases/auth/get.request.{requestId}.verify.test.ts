@@ -19,6 +19,7 @@ describe('GET /auth/request/{requestId}/verify - Verify OTP Request', () => {
     signin: '',
     signup: '',
     sudo: '',
+    notVerified: '',
   };
 
   beforeEach(async () => {
@@ -109,32 +110,213 @@ describe('GET /auth/request/{requestId}/verify - Verify OTP Request', () => {
     expect(response.status).toBe(200);
     expect(response.body.shouldRenewToken).toBeUndefined();
     requestIdMap.sudo = requestId;
+
+    // Not Yet Verified - signup
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({purpose: 'signup', email: 'newaccount@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    requestId = response.body.requestId;
+    requestIdMap.notVerified = requestId;
   });
 
   afterEach(async () => {
     await testEnv.stop();
   });
 
-  test('Fail - Request without ServerAdminToken', () => {
-    fail();
+  test('Fail - Request without ServerAdminToken', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+
+    // Request without any header
+    let response = await request(testEnv.expressServer.app).get(
+      `/auth/request/${requestIdMap.signin}/verify`
+    );
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthenticated');
+
+    // Request with header not containing X-SERVER-TOKEN
+    response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signin}/verify`)
+      .set({'X-OTHER-KEY': '<Some-Other-Value>'});
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthenticated');
   });
 
-  test('Fail - Request with invalid ServerAdminToken', () => {
+  test('Fail - Request with invalid ServerAdminToken', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+
     // Provide accessToken of user as ServerAdminToken
+    // Generate token
+    let tokenContent: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'access',
+      tokenType: 'user',
+    };
+    let token = jwt.sign(tokenContent, testEnv.testConfig.jwt.secretKey, {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
+    // Request
+    let response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signin}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
     // Provide serverAdminToken that signed with wrong key
-    fail();
+    // Generate Token
+    tokenContent = {
+      id: 'testAdmin',
+      type: 'access',
+      tokenType: 'serverAdmin',
+      accountType: 'admin',
+    };
+    token = jwt.sign(tokenContent, 'wrong key', {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
+    // Request
+    response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signin}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // Missing Account Type
+    // Generate Token
+    tokenContent = {
+      id: 'testAdmin',
+      type: 'access',
+      tokenType: 'serverAdmin',
+    };
+    token = jwt.sign(tokenContent, testEnv.testConfig.jwt.secretKey, {
+      algorithm: 'HS512',
+      expiresIn: '60m',
+    });
+    // Request
+    response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signin}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
   });
 
-  test('Fail - Request with expired ServerAdminToken', () => {
-    // Provide accessToken of user as ServerAdminToken
-    fail();
+  test('Fail - Request with expired ServerAdminToken', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+
+    // Generate token
+    const tokenContent: AuthToken = {
+      id: 'testAdmin',
+      type: 'access',
+      tokenType: 'serverAdmin',
+      accountType: 'admin',
+    };
+    const token = jwt.sign(tokenContent, testEnv.testConfig.jwt.secretKey, {
+      algorithm: 'HS512',
+      expiresIn: '1ms',
+    });
+
+    // Wait for 10 ms
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Request
+    const response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signin}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
   });
 
-  test('Fail - Not Existing Request ID', () => {
-    fail();
+  test('Fail - Not Existing Request ID', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+
+    // Generate token
+    const tokenContent: AuthToken = {
+      id: 'testAdmin',
+      type: 'access',
+      tokenType: 'serverAdmin',
+      accountType: 'admin',
+    };
+    const token = jwt.sign(tokenContent, testEnv.testConfig.jwt.secretKey, {
+      algorithm: 'HS512',
+      expiresIn: '10m',
+    });
+
+    // Request
+    const response = await request(testEnv.expressServer.app)
+      .get('/auth/request/not-existing-request-id/verify')
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Not Found');
   });
 
-  test('Success', () => {
-    fail();
+  test('Success', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+
+    // Generate token
+    const tokenContent: AuthToken = {
+      id: 'testAdmin',
+      type: 'access',
+      tokenType: 'serverAdmin',
+      accountType: 'admin',
+    };
+    const token = jwt.sign(tokenContent, testEnv.testConfig.jwt.secretKey, {
+      algorithm: 'HS512',
+      expiresIn: '10m',
+    });
+
+    // Request - signin purpose
+    let response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signin}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe('existing@wisc.edu');
+    expect(response.body.purpose).toBe('signin');
+    expect(response.body.verified).toBe(true);
+    let expireAt = new Date(response.body.expireAt);
+    let currentDate = new Date();
+    expect(expireAt > currentDate).toBe(true);
+    currentDate.setMinutes(currentDate.getMinutes() + 11);
+    expect(expireAt < currentDate).toBe(true);
+
+    // Request - signup purpose
+    response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.signup}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe('newaccount@wisc.edu');
+    expect(response.body.purpose).toBe('signup');
+    expect(response.body.verified).toBe(true);
+    expireAt = new Date(response.body.expireAt);
+    currentDate = new Date();
+    expect(expireAt > currentDate).toBe(true);
+    currentDate.setMinutes(currentDate.getMinutes() + 11);
+    expect(expireAt < currentDate).toBe(true);
+
+    // Request - sudo purpose
+    response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.sudo}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe('existing@wisc.edu');
+    expect(response.body.purpose).toBe('sudo');
+    expect(response.body.verified).toBe(true);
+    expireAt = new Date(response.body.expireAt);
+    currentDate = new Date();
+    expect(expireAt > currentDate).toBe(true);
+    currentDate.setMinutes(currentDate.getMinutes() + 11);
+    expect(expireAt < currentDate).toBe(true);
+
+    // Request - notVerified purpose
+    response = await request(testEnv.expressServer.app)
+      .get(`/auth/request/${requestIdMap.notVerified}/verify`)
+      .set({'X-SERVER-TOKEN': token});
+    expect(response.status).toBe(200);
+    expect(response.body.email).toBe('newaccount@wisc.edu');
+    expect(response.body.purpose).toBe('signup');
+    expect(response.body.verified).toBe(false);
+    expect(response.body.expireAt).toBeUndefined();
   });
 });

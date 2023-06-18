@@ -34,8 +34,8 @@ export default function verifyServerAdminToken(
   if (
     tokenContents.type !== 'access' ||
     tokenContents.tokenType !== 'serverAdmin' ||
-    !tokenContents.accountType ||
-    checkAccountType(tokenContents.accountType)
+    tokenContents.accountType === undefined ||
+    !checkAccountType(tokenContents.accountType)
   ) {
     throw new ForbiddenError();
   }

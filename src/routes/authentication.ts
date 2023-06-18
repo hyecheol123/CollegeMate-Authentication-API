@@ -25,11 +25,11 @@ import createServerAdminToken from '../functions/JWT/createServerAdminToken';
 import createAccessToken from '../functions/JWT/createAccessToken';
 import createRefreshToken from '../functions/JWT/createRefreshToken';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
+import verifyServerAdminToken from '../functions/JWT/verifyServerAdminToken';
 import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
 import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateEnterOTPCodeRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import getPasscode from '../functions/utils/getPasscode';
-import verifyServerAdminToken from '../functions/JWT/verifyServerAdminToken';
 
 // Path: /auth
 const authenticationRouter = express.Router();
