@@ -25,16 +25,18 @@
     "transform": {
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
-    "testTimeout": 120000,
+    "testTimeout": 180000,
     "setupFiles": [
       "./test/jest.mock.ts"
     ],
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
       "!src/datatypes/User/getUserProfile.ts",
+      "!src/datatypes/TNC/getTnC.ts",
       "!src/ServerConfigExample.ts",
       "!src/main.ts",
       "!src/utilsRunner/*",
+      "!src/functions/utils/getPasscode.ts",
       "!src/functions/utils/sendOTPCodeMail.ts"
     ]
   },

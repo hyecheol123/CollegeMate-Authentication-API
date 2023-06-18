@@ -12,7 +12,7 @@ import RefreshToken from '../../datatypes/RefreshToken/RefreshToken';
 
 /**
  * Method to generate new refreshToken
- *  - expires within 60min
+ *  - expires within given minutes
  *  - using HS512 as hashing algorithm
  *  - contains email
  * This method will also push refreshToken to the database

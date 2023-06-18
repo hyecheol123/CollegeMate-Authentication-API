@@ -31,6 +31,20 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
             tncVersion: 'v1.0.2',
           };
           return returnValue;
+        case 'old@wisc.edu':
+          returnValue = {
+            email: 'old@wisc.edu',
+            nickname: 'oldUser',
+            lastLogin: new Date('2022-05-10T00:50:43.000Z'),
+            signUpDate: new Date('2021-03-10T00:50:43.000Z'),
+            nicknameChanged: new Date('2021-03-10T00:50:43.000Z'),
+            deleted: false,
+            locked: false,
+            major: 'Computer Science',
+            graduationYear: 2024,
+            tncVersion: 'v1.0.0',
+          };
+          return returnValue;
         case 'locked@wisc.edu':
           returnValue = {
             email: 'locked@wisc.edu',
@@ -66,6 +80,25 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
           throw new NotFoundError();
       }
     }),
+}));
+
+// TnC Mock Data
+jest.mock('../src/datatypes/TNC/getTnC', () => ({
+  __esModule: true,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  default: jest.fn(async (_req: Request) => {
+    return {
+      version: 'v1.0.2',
+      createdAt: new Date('2022-03-01T00:50:43.000Z').toISOString(),
+      content: 'test',
+    };
+  }),
+}));
+
+// Mock getPasscode Function
+jest.mock('../src/functions/utils/getPasscode', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => '123456'),
 }));
 
 // Mocking Email Sending Module
