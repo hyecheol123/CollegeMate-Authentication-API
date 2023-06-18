@@ -2,6 +2,7 @@
  * Jest unit test for POST /auth/request/{requestId}/code method
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
+ * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 // eslint-disable-next-line node/no-unpublished-import
@@ -14,6 +15,7 @@ import ExpressServer from '../../../src/ExpressServer';
 import AuthToken from '../../../src/datatypes/Token/AuthToken';
 import RefreshToken from '../../../src/datatypes/RefreshToken/RefreshToken';
 import OTP from '../../../src/datatypes/OTP/OTP';
+import invalidateToken from '../../utils/invalidateRefreshToken';
 
 describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
   let testEnv: TestEnv;
@@ -30,32 +32,398 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     await testEnv.stop();
   });
 
-  test('Fail - Request not from collegemate.app nor Mobile Application', () => {
-    fail();
+  test('Fail - Request not from collegemate.app nor Mobile Application', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Generate OTP Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    const {requestId} = response.body;
+
+    // Request from wrong Origin Header
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://suspicious.com'})
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // Request from wrong applicationKey Header
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Suspicious-App>'})
+      .send({
+        email: 'existing@wisc.edu',
+        passcode: '123456',
+      });
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('signin');
+    expect(dbOps.resource.verified).toBe(false);
+    // Code still should be expires in 3 minutes
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 4);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Fail - Missing Required Properties or has Additional Properties', () => {
-    fail();
+  test('Fail - Missing Required Properties or has Additional Properties', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Generate OTP Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    const {requestId} = response.body;
+
+    // Missing Email
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({passcode: '123456'});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Bad Request');
+
+    // Missing Passcode
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'existing@wisc.edu'});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Bad Request');
+
+    // Additional Properties
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({
+        email: 'existing@wisc.edu',
+        passcode: '123456',
+        additional: 'property',
+      });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Bad Request');
+
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('signin');
+    expect(dbOps.resource.verified).toBe(false);
+    // Code still should be expires in 3 minutes
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 4);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Fail - Not Matching Email', () => {
-    fail();
+  test('Fail - Not Matching Email', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Generate OTP Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    const {requestId} = response.body;
+
+    // Wrong Email
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'notMatching@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Bad Request');
+
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('signin');
+    expect(dbOps.resource.verified).toBe(false);
+    // Code still should be expires in 3 minutes
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 4);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Fail - requestId Not Found', () => {
-    fail();
+  test('Fail - requestId Not Found', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Generate OTP Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    const {requestId} = response.body;
+    const fakeRequestId = 'notFound';
+
+    // Incorrect requestId
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${fakeRequestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('Not Found');
+
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('signin');
+    expect(dbOps.resource.verified).toBe(false);
+    // Code still should be expires in 3 minutes
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 4);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Fail - Expired Request', () => {
-    fail();
+  test('Fail - Expired Request', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Generate OTP Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({Origin: 'https://collegemate.app'})
+      .send({purpose: 'signin', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    const {requestId} = response.body;
+
+    // Expired Request
+    let dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    const {resource} = dbOps;
+    resource.expireAt = new Date();
+    resource.expireAt.setMinutes(resource.expireAt.getMinutes() - 1);
+    await testEnv.dbClient.container('otp').item(requestId).replace(resource);
+
+    // Request - Enter OTP Code
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(409);
+    expect(response.body.error).toBe('Conflict');
+
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
+
+    // DB Checks - OTP Verified Flags
+    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('signin');
+    expect(dbOps.resource.verified).toBe(false);
   });
 
-  test('Fail - sudo purpose request without refreshToken or with expired refreshToken', () => {
-    fail();
+  test('Fail - sudo purpose request without refreshToken or with expired refreshToken', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Create RefreshToken
+    const tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    const refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.refreshKey,
+      {algorithm: 'HS512', expiresIn: '180m'}
+    );
+    const tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Request New OTP
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+    const {requestId} = response.body;
+
+    // Invalidate refreshToken
+    expect(await invalidateToken(testEnv.dbClient, 190)).toBeGreaterThanOrEqual(
+      1
+    );
+    // Sudo Purpose Request - Without RefreshToken
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('Unauthenticated');
+
+    // Sudo Purpose Request - With Expired RefreshToken
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('sudo');
+    expect(dbOps.resource.verified).toBe(false);
+    // Code still should be expires in 3 minutes
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 4);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Fail - sudo purpose request with invalid token', () => {
-    fail();
+  test('Fail - sudo purpose request with invalid token', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Create RefreshToken
+    let tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.refreshKey,
+      {algorithm: 'HS512', expiresIn: '180m'}
+    );
+    let tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Request New OTP
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+    const {requestId} = response.body;
+
+    // Create Invalid RefreshToken
+    tokenContents = {
+      id: 'invalid@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Incorrect RefreshToken
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('sudo');
+    expect(dbOps.resource.verified).toBe(false);
+    // Code still should be expires in 3 minutes
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 4);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
   test('Fail - sudo purpose request with unmatching refreshToken', async () => {
@@ -1256,7 +1624,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
 
     // Create RefreshToken
     // Want to check whether the enter OTP code will work with
-    // different refreshToken that owned by the same user.
+    // different refreshToken that is owned by the same user.
     refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
       algorithm: 'HS512',
       expiresIn: '3m',
