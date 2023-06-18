@@ -314,7 +314,8 @@ authenticationRouter.post(
         };
         res.cookie('X-ACCESS-TOKEN', tokens.access, cookieOption);
         cookieOption.maxAge = refreshTokenExpiresAfter * 60;
-        cookieOption.domain = `api.${req.app.get('serverDomain')}`;
+        cookieOption.domain = `${req.app.get('serverDomain')}`;
+        cookieOption.path = '/auth';
         res.cookie('X-REFRESH-TOKEN', tokens.refresh, cookieOption);
         res.status(201).json({
           needNewTNCAccpet: needNewTNCAccpet ? true : undefined,
@@ -325,6 +326,8 @@ authenticationRouter.post(
     }
   }
 );
+
+// GET: /auth/request/{requestId}/verify
 
 // DELETE: /auth/logout
 authenticationRouter.delete('/logout', async (req, res, next) => {

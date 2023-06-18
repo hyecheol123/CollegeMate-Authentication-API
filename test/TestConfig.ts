@@ -32,7 +32,7 @@ export default class TestConfig extends ServerConfigTemplate {
       webpageOrigin: 'https://collegemate.app',
       applicationKey: ['<Android-App-v1>', '<iOS-App-v1>'],
       jwtKeys: {secretKey: 'keySecret', refreshKey: 'keySecretRefresh'},
-      serverDomainPath: {domain: 'collegemate.app'},
+      serverDomainPath: {domain: 'api.collegemate.app'},
       serverApplicationKey: '<API-Servers>',
       serverAdminKey: '',
       azureAppRegistrationInfo: {
