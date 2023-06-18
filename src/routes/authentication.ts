@@ -29,6 +29,7 @@ import {validateInitiateOTPRequest} from '../functions/inputValidator/validateIn
 import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateEnterOTPCodeRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import getPasscode from '../functions/utils/getPasscode';
+import verifyServerAdminToken from '../functions/JWT/verifyServerAdminToken';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -328,6 +329,37 @@ authenticationRouter.post(
 );
 
 // GET: /auth/request/{requestId}/verify
+authenticationRouter.get(
+  '/request/:requestId/verify',
+  async (req, res, next) => {
+    const dbClient: Cosmos.Database = req.app.locals.dbClient;
+
+    try {
+      // Header check - serverAdminToken
+      const serverToken = req.header('X-SERVER-TOKEN');
+      if (serverToken === undefined) {
+        throw new UnauthenticatedError();
+      }
+      verifyServerAdminToken(serverToken, req.app.get('jwtAccessKey'));
+
+      // DB Operation
+      const requestId = req.params.requestId;
+      const otpContent = await OTP.read(dbClient, requestId);
+
+      // Response
+      res.status(200).json({
+        email: otpContent.email,
+        purpose: otpContent.purpose,
+        verified: otpContent.verified,
+        expireAt: otpContent.verified
+          ? (otpContent.expireAt as Date).toISOString()
+          : undefined,
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 // DELETE: /auth/logout
 authenticationRouter.delete('/logout', async (req, res, next) => {
