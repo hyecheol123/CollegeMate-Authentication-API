@@ -105,6 +105,7 @@ export default class OTP {
         {op: 'replace', path: '/expireAt', value: newExpireAt.toISOString()},
       ]);
 
+    // istanbul ignore if
     if (dbOps.statusCode === 404 || dbOps.resource === undefined) {
       throw new NotFoundError();
     }

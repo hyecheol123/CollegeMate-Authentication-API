@@ -289,6 +289,7 @@ authenticationRouter.post(
           }
         } catch (e) {
           // If 404, ignore the error
+          // istanbul ignore next
           if ((e as HTTPError).statusCode !== 404) {
             throw e;
           }

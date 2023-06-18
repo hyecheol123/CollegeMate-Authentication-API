@@ -52,6 +52,8 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'existing@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
 
     // Request from wrong applicationKey Header
     response = await request(testEnv.expressServer.app)
@@ -63,7 +65,18 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
 
+    // Request from without applicationKey or Origin Header
+    response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .send({
+        email: 'existing@wisc.edu',
+        passcode: '123456',
+      });
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
 
@@ -104,6 +117,8 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({passcode: '123456'});
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
 
     // Missing Passcode
     response = await request(testEnv.expressServer.app)
@@ -112,6 +127,8 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'existing@wisc.edu'});
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
+    // Check Cookie & Token Information
+    expect(response.header['set-cookie']).toBeUndefined();
 
     // Additional Properties
     response = await request(testEnv.expressServer.app)
@@ -124,7 +141,6 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
-
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
 
@@ -165,7 +181,6 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'notMatching@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
-
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
 
@@ -207,7 +222,6 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'existing@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(404);
     expect(response.body.error).toBe('Not Found');
-
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
 
@@ -256,7 +270,6 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'existing@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(409);
     expect(response.body.error).toBe('Conflict');
-
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
 
@@ -382,11 +395,11 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
 
     // Create Invalid RefreshToken
     tokenContents = {
-      id: 'invalid@wisc.edu',
+      id: 'existing@wisc.edu',
       type: 'refresh',
       tokenType: 'user',
     };
-    refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
+    refreshToken = jwt.sign(tokenContents, 'Invalid Key', {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
