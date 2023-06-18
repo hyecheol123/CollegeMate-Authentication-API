@@ -5,6 +5,7 @@
  */
 
 import * as Cosmos from '@azure/cosmos';
+import NotFoundError from '../../exceptions/NotFoundError';
 
 // DB Container id
 const OTP_DB = 'otp';
@@ -55,5 +56,58 @@ export default class OTP {
   ): Promise<void> {
     otpRequest.expireAt = (otpRequest.expireAt as Date).toISOString();
     await dbClient.container(OTP_DB).items.create<OTP>(otpRequest);
+  }
+
+  /**
+   * Read existing OTP document from the database
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @param {string} requestId OTP Request ID
+   */
+  static async read(
+    dbClient: Cosmos.Database,
+    requestId: string
+  ): Promise<OTP> {
+    const dbOps = await dbClient.container(OTP_DB).item(requestId).read<OTP>();
+
+    if (dbOps.statusCode === 404 || dbOps.resource === undefined) {
+      throw new NotFoundError();
+    }
+
+    return new OTP(
+      requestId,
+      dbOps.resource.email,
+      dbOps.resource.purpose,
+      new Date(dbOps.resource.expireAt),
+      dbOps.resource.passcode,
+      dbOps.resource.verified
+    );
+  }
+
+  /**
+   * Set verified flag of given OTP request
+   *
+   * @param {Cosmos.Database} dbClient DB Client (Cosmos Database)
+   * @param {string} requestId OTP Request ID
+   */
+  static async updateSetVerified(
+    dbClient: Cosmos.Database,
+    requestId: string
+  ): Promise<void> {
+    const newExpireAt = new Date();
+    newExpireAt.setMinutes(newExpireAt.getMinutes() + 10);
+
+    const dbOps = await dbClient
+      .container(OTP_DB)
+      .item(requestId)
+      .patch([
+        {op: 'replace', path: '/verified', value: true},
+        {op: 'replace', path: '/expireAt', value: newExpireAt.toISOString()},
+      ]);
+
+    // istanbul ignore if
+    if (dbOps.statusCode === 404 || dbOps.resource === undefined) {
+      throw new NotFoundError();
+    }
   }
 }
