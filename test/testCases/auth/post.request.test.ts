@@ -165,13 +165,15 @@ describe('POST /auth/request - Initiate OTP Request', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const refreshToken = jwt.sign(
+    let refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
       {algorithm: 'HS512', expiresIn: '180m'}
     );
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    refreshToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -281,13 +283,15 @@ describe('POST /auth/request - Initiate OTP Request', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const refreshToken = jwt.sign(
+    let refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
       {algorithm: 'HS512', expiresIn: '180m'}
     );
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    refreshToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -402,6 +406,8 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     );
     let expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    refreshToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -431,6 +437,8 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     });
     expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    refreshToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -460,6 +468,8 @@ describe('POST /auth/request - Initiate OTP Request', () => {
     });
     expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    refreshToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -560,13 +570,16 @@ describe('POST /auth/request - Initiate OTP Request', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const refreshToken = jwt.sign(
+    let refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
       {algorithm: 'HS512', expiresIn: '180m'}
     );
     const tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -614,13 +627,16 @@ describe('POST /auth/request - Initiate OTP Request', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const refreshToken = jwt.sign(
+    let refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
       {algorithm: 'HS512', expiresIn: '3m'}
     );
     const tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 3);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
