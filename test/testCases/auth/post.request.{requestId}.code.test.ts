@@ -11,6 +11,7 @@ import * as Cosmos from '@azure/cosmos';
 import TestEnv from '../../TestEnv';
 import ExpressServer from '../../../src/ExpressServer';
 import AuthToken from '../../../src/datatypes/Token/AuthToken';
+import RefreshToken from '../../../src/datatypes/RefreshToken/RefreshToken';
 
 describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
   let testEnv: TestEnv;
@@ -387,11 +388,171 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Success - sudo purpose', () => {
-    fail();
+  test('Success - sudo purpose', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Create RefreshToken
+    const tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.refreshKey,
+      {algorithm: 'HS512', expiresIn: '180m'}
+    );
+    let tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Request New OTP
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+    const {requestId} = response.body;
+
+    // Create RefreshToken
+    // Want to check whether the enter OTP code will work with
+    // different refreshToken that owned by the same user.
+    refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
+      algorithm: 'HS512',
+      expiresIn: '181m',
+    });
+    tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Request - Enter OTP Code
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(200);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+    const otpExpires = new Date(response.body.verificationExpiresAt);
+    const currDate = new Date();
+    expect(otpExpires > currDate).toBe(true);
+    currDate.setMinutes(currDate.getMinutes() + 11);
+    expect(otpExpires < currDate).toBe(true);
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('sudo');
+    expect(dbOps.resource.verified).toBe(true);
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 11);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 
-  test('Success - sudo purpose / with about to expire token', () => {
-    fail();
+  test('Success - sudo purpose / with about to expire token', async () => {
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Create RefreshToken
+    const tokenContents: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let refreshToken = jwt.sign(
+      tokenContents,
+      testEnv.testConfig.jwt.refreshKey,
+      {algorithm: 'HS512', expiresIn: '180m'}
+    );
+    let tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Request New OTP
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({purpose: 'sudo', email: 'existing@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    expect(new Date(response.body.codeExpireAt) > new Date()).toBe(true);
+    expect(response.body.shouldRenewToken).toBeUndefined();
+    const {requestId} = response.body;
+
+    // Create RefreshToken
+    // Want to check whether the enter OTP code will work with
+    // different refreshToken that owned by the same user.
+    refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
+      algorithm: 'HS512',
+      expiresIn: '3m',
+    });
+    tokenExpireAt = new Date();
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 3);
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>({
+        id: refreshToken,
+        email: 'existing@wisc.edu',
+        expireAt: tokenExpireAt.toISOString(),
+      });
+
+    // Request - Enter OTP Code
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({Origin: 'https://collegemate.app'})
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshToken}`])
+      .send({email: 'existing@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(200);
+    expect(response.body.shouldRenewToken).toBe(true);
+    const otpExpires = new Date(response.body.verificationExpiresAt);
+    const currDate = new Date();
+    expect(otpExpires > currDate).toBe(true);
+    currDate.setMinutes(currDate.getMinutes() + 11);
+    expect(otpExpires < currDate).toBe(true);
+
+    // DB Checks - OTP Verified Flags
+    const dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId)
+      .read();
+    expect(dbOps.statusCode !== 404).toBe(true);
+    expect(dbOps.resource.email).toBe('existing@wisc.edu');
+    expect(dbOps.resource.purpose).toBe('sudo');
+    expect(dbOps.resource.verified).toBe(true);
+    const sessionExpires = new Date(dbOps.resource.expireAt);
+    const expectedExpires = new Date();
+    expect(sessionExpires > expectedExpires).toBe(true);
+    expectedExpires.setMinutes(expectedExpires.getMinutes() + 11);
+    expect(sessionExpires < expectedExpires).toBe(true);
   });
 });
