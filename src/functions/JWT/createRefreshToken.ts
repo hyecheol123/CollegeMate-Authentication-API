@@ -37,7 +37,7 @@ export default async function createRefreshToken(
   };
 
   // Generate RefreshToken
-  const token = jwt.sign(tokenContent, jwtRefreshKey, {
+  let token = jwt.sign(tokenContent, jwtRefreshKey, {
     algorithm: 'HS512',
     expiresIn: `${expireAfterMin}m`,
   });
@@ -45,6 +45,7 @@ export default async function createRefreshToken(
   // DB Operation
   const expireAt = new Date();
   expireAt.setMinutes(expireAt.getMinutes() + expireAfterMin);
+  token = expireAt.getMilliseconds().toString().padStart(3, '0') + token;
   const refreshTokenObj = new RefreshToken(token, email, expireAt);
   await RefreshToken.create(dbClient, refreshTokenObj);
 

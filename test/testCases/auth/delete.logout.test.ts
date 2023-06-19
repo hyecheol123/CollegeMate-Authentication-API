@@ -45,6 +45,8 @@ describe('DELETE /auth/logout', () => {
     });
     let expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
     let testTokenObj = new RefreshToken(
       testToken,
       'existing@wisc.edu',
@@ -90,6 +92,8 @@ describe('DELETE /auth/logout', () => {
     });
     expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
     testTokenObj = new RefreshToken(testToken, 'existing@wisc.edu', expireAt);
     testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
     await testEnv.dbClient
@@ -147,12 +151,14 @@ describe('DELETE /auth/logout', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
     const testTokenObj = new RefreshToken(
       testToken,
       'existing@wisc.edu',
@@ -186,12 +192,14 @@ describe('DELETE /auth/logout', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
     const testTokenObj = new RefreshToken(
       testToken,
       'existing@wisc.edu',
@@ -239,6 +247,10 @@ describe('DELETE /auth/logout', () => {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
+    let expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
 
     // Test with Refresh Token
     let response = await request(testEnv.expressServer.app)
@@ -257,6 +269,10 @@ describe('DELETE /auth/logout', () => {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
+    expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
 
     // Test with Refresh Token
     response = await request(testEnv.expressServer.app)
@@ -278,10 +294,14 @@ describe('DELETE /auth/logout', () => {
     };
 
     // Generate RefreshToken
-    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
       expiresIn: '60m',
     });
+    const expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 60);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
 
     const response = await request(testEnv.expressServer.app)
       .delete('/auth/logout')
@@ -299,12 +319,14 @@ describe('DELETE /auth/logout', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
       algorithm: 'HS512',
       expiresIn: '180m',
     });
     const expireAt = new Date();
     expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
     const testTokenObj = new RefreshToken(
       testToken,
       'existing@wisc.edu',

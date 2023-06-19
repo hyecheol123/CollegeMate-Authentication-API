@@ -291,13 +291,16 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       type: 'refresh',
       tokenType: 'user',
     };
-    const refreshToken = jwt.sign(
+    let refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
       {algorithm: 'HS512', expiresIn: '180m'}
     );
     const tokenExpireAt = new Date();
-    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -372,7 +375,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       {algorithm: 'HS512', expiresIn: '180m'}
     );
     let tokenExpireAt = new Date();
-    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -404,7 +410,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       expiresIn: '180m',
     });
     tokenExpireAt = new Date();
-    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -456,6 +465,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     );
     let tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -480,10 +492,13 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     tokenContents.id = 'old@wisc.edu';
     refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
       algorithm: 'HS512',
-      expiresIn: '181m',
+      expiresIn: '180m',
     });
     tokenExpireAt = new Date();
-    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -508,6 +523,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     });
     tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -580,7 +598,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
     tokenPayload = jwt.verify(
-      cookie[1],
+      cookie[1].substring(3),
       testEnv.testConfig.jwt.refreshKey,
       jwtOption
     ) as AuthToken; // Check for RefreshToken contents
@@ -655,7 +673,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
     tokenPayload = jwt.verify(
-      cookie[1],
+      cookie[1].substring(3),
       testEnv.testConfig.jwt.refreshKey,
       jwtOption
     ) as AuthToken; // Check for RefreshToken contents
@@ -707,10 +725,13 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     let refreshToken = jwt.sign(
       tokenContents,
       testEnv.testConfig.jwt.refreshKey,
-      {algorithm: 'HS512', expiresIn: '181m'}
+      {algorithm: 'HS512', expiresIn: '180m'}
     );
     let tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -734,10 +755,13 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // different refreshToken that owned by the same user.
     refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
       algorithm: 'HS512',
-      expiresIn: '182m',
+      expiresIn: '180m',
     });
     tokenExpireAt = new Date();
-    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 182);
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -996,6 +1020,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     );
     let tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -1047,6 +1074,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     });
     tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -1098,6 +1128,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     });
     tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -1252,7 +1285,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
     tokenPayload = jwt.verify(
-      cookie[1],
+      cookie[1].substring(3),
       testEnv.testConfig.jwt.refreshKey,
       jwtOption
     ) as AuthToken; // Check for RefreshToken contents
@@ -1325,7 +1358,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
     tokenPayload = jwt.verify(
-      cookie[1],
+      cookie[1].substring(3),
       testEnv.testConfig.jwt.refreshKey,
       jwtOption
     ) as AuthToken; // Check for RefreshToken contents
@@ -1402,7 +1435,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
     tokenPayload = jwt.verify(
-      cookie[1],
+      cookie[1].substring(3),
       testEnv.testConfig.jwt.refreshKey,
       jwtOption
     ) as AuthToken; // Check for RefreshToken contents
@@ -1479,7 +1512,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
     tokenPayload = jwt.verify(
-      cookie[1],
+      cookie[1].substring(3),
       testEnv.testConfig.jwt.refreshKey,
       jwtOption
     ) as AuthToken; // Check for RefreshToken contents
@@ -1531,6 +1564,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     );
     let tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -1556,10 +1592,13 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // different refreshToken that owned by the same user.
     refreshToken = jwt.sign(tokenContents, testEnv.testConfig.jwt.refreshKey, {
       algorithm: 'HS512',
-      expiresIn: '181m',
+      expiresIn: '180m',
     });
     tokenExpireAt = new Date();
-    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 181);
+    tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -1615,6 +1654,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     );
     let tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 180);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({
@@ -1644,6 +1686,9 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     });
     tokenExpireAt = new Date();
     tokenExpireAt.setMinutes(tokenExpireAt.getMinutes() + 3);
+    refreshToken =
+      tokenExpireAt.getMilliseconds().toString().padStart(3, '0') +
+      refreshToken;
     await testEnv.dbClient
       .container('refreshToken')
       .items.create<RefreshToken>({

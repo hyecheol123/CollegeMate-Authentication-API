@@ -25,6 +25,7 @@ import createServerAdminToken from '../functions/JWT/createServerAdminToken';
 import createAccessToken from '../functions/JWT/createAccessToken';
 import createRefreshToken from '../functions/JWT/createRefreshToken';
 import verifyRefreshToken from '../functions/JWT/verifyRefreshToken';
+import verifyServerAdminToken from '../functions/JWT/verifyServerAdminToken';
 import {validateInitiateOTPRequest} from '../functions/inputValidator/validateInitiateOTPRequest';
 import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateEnterOTPCodeRequest';
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
@@ -328,6 +329,37 @@ authenticationRouter.post(
 );
 
 // GET: /auth/request/{requestId}/verify
+authenticationRouter.get(
+  '/request/:requestId/verify',
+  async (req, res, next) => {
+    const dbClient: Cosmos.Database = req.app.locals.dbClient;
+
+    try {
+      // Header check - serverAdminToken
+      const serverToken = req.header('X-SERVER-TOKEN');
+      if (serverToken === undefined) {
+        throw new UnauthenticatedError();
+      }
+      verifyServerAdminToken(serverToken, req.app.get('jwtAccessKey'));
+
+      // DB Operation
+      const requestId = req.params.requestId;
+      const otpContent = await OTP.read(dbClient, requestId);
+
+      // Response
+      res.status(200).json({
+        email: otpContent.email,
+        purpose: otpContent.purpose,
+        verified: otpContent.verified,
+        expireAt: otpContent.verified
+          ? (otpContent.expireAt as Date).toISOString()
+          : undefined,
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 // DELETE: /auth/logout
 authenticationRouter.delete('/logout', async (req, res, next) => {

@@ -34,9 +34,13 @@ export default async function verifyRefreshToken(
   let tokenContents: JWTObject;
   try {
     // Check validity of token
-    tokenContents = jwt.verify(req.cookies['X-REFRESH-TOKEN'], jwtRefreshKey, {
-      algorithms: ['HS512'],
-    }) as JWTObject;
+    tokenContents = jwt.verify(
+      req.cookies['X-REFRESH-TOKEN'].substring(3),
+      jwtRefreshKey,
+      {
+        algorithms: ['HS512'],
+      }
+    ) as JWTObject;
   } catch (e) {
     throw new ForbiddenError();
   }
