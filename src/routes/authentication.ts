@@ -397,6 +397,72 @@ authenticationRouter.delete('/logout', async (req, res, next) => {
   }
 });
 
+// GET: /auth/renew
+authenticationRouter.get('/renew', async (req, res, next) => {
+  const dbClient: Cosmos.Database = req.app.locals.dbClient;
+
+  try {
+    // Check Origin/applicationKey
+    if (
+      req.header('Origin') !== req.app.get('webpageOrigin') &&
+      !req.app.get('applicationKey').includes(req.header('X-APPLICATION-KEY'))
+    ) {
+      throw new ForbiddenError();
+    }
+
+    type TokenVerifyRequest = {
+      renewRefreshToken: boolean;
+    };
+    const tokenVerifyRequest: TokenVerifyRequest = req.body;
+
+    // Cookies check - refreshToken
+    const tokenVerifyResult = await verifyRefreshToken(
+      dbClient,
+      req,
+      req.app.get('jwtRefreshKey')
+    );
+    let refreshToken = undefined;
+
+    // Renew access token, and refresh token if needed
+    if (
+      tokenVerifyRequest.renewRefreshToken ||
+      tokenVerifyResult.aboutToExpire
+    ) {
+      refreshToken = createRefreshToken(
+        dbClient,
+        tokenVerifyResult.content.id,
+        req.app.get('jwtRefreshKey'),
+        180 * 60
+      );
+    }
+
+    const accessToken = await createAccessToken(
+      tokenVerifyResult.content.id,
+      req.app.get('jwtAccessKey')
+    );
+
+    // Send response - 200: Response Header cookie set
+    const cookieOption: express.CookieOptions = {
+      httpOnly: true,
+      maxAge: 10 * 60,
+      secure: true,
+      domain: req.app.get('serverDomain'),
+      sameSite: 'strict',
+    };
+    res.cookie('X-ACCESS-TOKEN', accessToken, cookieOption);
+
+    if (refreshToken !== undefined) {
+      cookieOption.maxAge = 180 * 60;
+      cookieOption.domain = `${req.app.get('serverDomain')}`;
+      cookieOption.path = '/auth';
+      res.cookie('X-REFRESH-TOKEN', refreshToken, cookieOption);
+    }
+    res.status(200).send();
+  } catch (e) {
+    next(e);
+  }
+});
+
 // POST: /auth/login
 authenticationRouter.post('/login', async (req, res, next) => {
   const dbClient: Cosmos.Database = req.app.locals.dbClient;
