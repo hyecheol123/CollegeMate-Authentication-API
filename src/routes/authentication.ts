@@ -2,6 +2,7 @@
  * express Router middleware for Authentication APIs
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
+ * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 import * as express from 'express';
@@ -421,22 +422,42 @@ authenticationRouter.get('/renew', async (req, res, next) => {
       req,
       req.app.get('jwtRefreshKey')
     );
-    let refreshToken = undefined;
 
+    // Retrieve user information (USER API)
+    let userProfile: User | undefined = undefined;
+    if (tokenVerifyRequest.renewRefreshToken) {
+      try {
+        userProfile = await getUserProfile(tokenVerifyResult.content.id, req);
+      } catch (e) {
+        // istanbul ignore next
+        if ((e as HTTPError).statusCode === 404) {
+          throw new ForbiddenError();
+        } else {
+          throw e;
+        }
+      }
+      // If user is deleted or locked and renewRefreshToken is true, throw error
+      if (userProfile.deleted || userProfile.locked) {
+        throw new ForbiddenError();
+      }
+    }
+
+    let refreshToken: string | undefined = undefined;
     // Renew access token, and refresh token if needed
     if (
-      tokenVerifyRequest.renewRefreshToken ||
+      userProfile !== undefined &&
+      tokenVerifyRequest.renewRefreshToken &&
       tokenVerifyResult.aboutToExpire
     ) {
-      refreshToken = createRefreshToken(
+      refreshToken = await createRefreshToken(
         dbClient,
         tokenVerifyResult.content.id,
         req.app.get('jwtRefreshKey'),
-        180 * 60
+        180
       );
     }
 
-    const accessToken = await createAccessToken(
+    const accessToken = createAccessToken(
       tokenVerifyResult.content.id,
       req.app.get('jwtAccessKey')
     );
