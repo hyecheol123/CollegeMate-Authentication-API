@@ -22,6 +22,7 @@ describe('GET /auth/renew', () => {
     soonExpired: '',
     expired: '',
     signup: '',
+    wrong: '',
   };
 
   beforeEach(async () => {
@@ -30,6 +31,139 @@ describe('GET /auth/renew', () => {
 
     // Start Test Environment
     await testEnv.start();
+
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+
+    // Valid Refresh Token
+    let tokenContent: AuthToken = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    let expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
+    let testTokenObj = new RefreshToken(
+      testToken,
+      'existing@wisc.edu',
+      expireAt
+    );
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+    refreshTokenMap.valid = testToken;
+
+    // Deleted Refresh Token
+    tokenContent = {
+      id: 'deleted@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
+    testTokenObj = new RefreshToken(testToken, 'deleted@wisc.edu', expireAt);
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+    refreshTokenMap.deleted = testToken;
+
+    // Soon Expired Refresh Token
+    tokenContent = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '10m',
+    });
+    expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 10);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
+    testTokenObj = new RefreshToken(testToken, 'existing@wisc.edu', expireAt);
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+    refreshTokenMap.soonExpired = testToken;
+
+    // Signup Refresh Token
+    // Generate OTP Request
+    let response = await request(testEnv.expressServer.app)
+      .post('/auth/request')
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({purpose: 'signup', email: 'newAccount@wisc.edu'});
+    expect(response.status).toBe(201);
+    expect(response.body.requestId).toBeDefined();
+    const requestId = response.body.requestId;
+    // Request - Enter OTP Code
+    response = await request(testEnv.expressServer.app)
+      .post(`/auth/request/${requestId}/code`)
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
+      .send({email: 'newAccount@wisc.edu', passcode: '123456'});
+    expect(response.status).toBe(201);
+    expect(response.body.needNewTNCAccpet).toBeUndefined();
+
+    const cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
+    expect(cookie[0]).toBe('X-REFRESH-TOKEN');
+    refreshTokenMap.signup = cookie[1];
+
+    // Expired Refresh Token
+    tokenContent = {
+      id: 'existing@wisc.edu',
+      type: 'refresh',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
+    testTokenObj = new RefreshToken(testToken, 'existing@wisc.edu', expireAt);
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+    refreshTokenMap.expired = testToken;
+
+    // Wrong Refresh Token
+    tokenContent = {
+      id: 'existing@wisc.edu',
+      type: 'access',
+      tokenType: 'user',
+    };
+    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
+      algorithm: 'HS512',
+      expiresIn: '180m',
+    });
+    expireAt = new Date();
+    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    testToken =
+      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
+    testTokenObj = new RefreshToken(testToken, 'existing@wisc.edu', expireAt);
+    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
+    await testEnv.dbClient
+      .container('refreshToken')
+      .items.create<RefreshToken>(testTokenObj);
+    refreshTokenMap.wrong = testToken;
   });
 
   afterEach(async () => {
@@ -52,30 +186,6 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Invalidate Refresh Token
     expect(await invalidateToken(testEnv.dbClient, 180)).toBeGreaterThanOrEqual(
       1
@@ -84,7 +194,7 @@ describe('GET /auth/renew', () => {
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.expired}`])
       .set({Origin: 'https://collegemate.app'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(403);
@@ -95,34 +205,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
       .set({Origin: 'https://suspicious.app'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(403);
@@ -133,34 +219,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'access',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.wrong}`])
       .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
@@ -170,31 +232,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Signup purpose OTP Request
-    // Generate OTP Request
-    let response = await request(testEnv.expressServer.app)
-      .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({purpose: 'signup', email: 'newAccount@wisc.edu'});
-    expect(response.status).toBe(201);
-    expect(response.body.requestId).toBeDefined();
-    const requestId = response.body.requestId;
-    // Request - Enter OTP Code
-    response = await request(testEnv.expressServer.app)
-      .post(`/auth/request/${requestId}/code`)
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({email: 'newAccount@wisc.edu', passcode: '123456'});
-    expect(response.status).toBe(201);
-    expect(response.body.needNewTNCAccpet).toBeUndefined();
-
-    const cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
-    expect(cookie[0]).toBe('X-REFRESH-TOKEN');
-    const testToken = cookie[1];
-
     // Test with Refresh Token and No Request Body
-    response = await request(testEnv.expressServer.app)
+    const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
       .set({Origin: 'https://collegemate.app'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(403);
@@ -205,34 +246,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'deleted@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'deleted@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.deleted}`])
       .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(403);
@@ -241,33 +258,12 @@ describe('GET /auth/renew', () => {
 
   test('Success: Signup Token', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
-    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
-
-    // Signup purpose OTP Request
-    // Generate OTP Request
-    let response = await request(testEnv.expressServer.app)
-      .post('/auth/request')
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({purpose: 'signin', email: 'existing@wisc.edu'});
-    expect(response.status).toBe(201);
-    expect(response.body.requestId).toBeDefined();
-    const requestId = response.body.requestId;
-    // Request - Enter OTP Code
-    response = await request(testEnv.expressServer.app)
-      .post(`/auth/request/${requestId}/code`)
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({email: 'existing@wisc.edu', passcode: '123456'});
-    expect(response.status).toBe(201);
-    expect(response.body.needNewTNCAccpet).toBeUndefined();
-
-    let cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
-    expect(cookie[0]).toBe('X-REFRESH-TOKEN');
-    const testToken = cookie[1];
+    // testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
     // Test with Refresh Token and No Request Body
-    response = await request(testEnv.expressServer.app)
+    const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
       .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(200);
 
@@ -275,7 +271,7 @@ describe('GET /auth/renew', () => {
     const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
     expect(response.header['set-cookie']).toHaveLength(1);
     // Parse Access Token and check expiration
-    cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
+    const cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
     expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Cookie Name
     // Check for token contents and expiration
     const tokenPayload = jwt.verify(
@@ -283,7 +279,7 @@ describe('GET /auth/renew', () => {
       testEnv.testConfig.jwt.secretKey,
       jwtOption
     ) as AuthToken; // Check for AccessToken contents
-    expect(tokenPayload.id).toBe('existing@wisc.edu');
+    expect(tokenPayload.id).toBe('newAccount@wisc.edu');
     expect(tokenPayload.tokenType).toBe('user');
     expect(tokenPayload.type).toBe('access');
     expect(tokenPayload.accountType).toBeUndefined();
@@ -294,34 +290,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '10m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 10);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
       .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(200);
@@ -373,34 +345,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
       .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(200);
@@ -427,34 +375,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '10m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 10);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
       .set({Origin: 'https://collegemate.app'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(200);
@@ -506,34 +430,10 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test Web - Refresh Token
-    const tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    const expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    const testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
     // Test with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
       .set({Origin: 'https://collegemate.app'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(200);
