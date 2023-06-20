@@ -49,98 +49,19 @@ describe('DELETE /auth/logout', () => {
     fail();
   });
 
-  test('Succes', async () => {
-    testEnv.expressServer = testEnv.expressServer as ExpressServer;
-    testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
+  test('Succes: With Application Key', async () => {
+    fail();
+  });
 
-    // Test Web logout
-    let tokenContent: AuthToken = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    let testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    let expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    let testTokenObj = new RefreshToken(
-      testToken,
-      'existing@wisc.edu',
-      expireAt
-    );
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
+  test('Succes: With Application Key and Request Body', async () => {
+    fail();
+  });
 
-    // Test with Refresh Token
-    let response = await request(testEnv.expressServer.app)
-      .delete('/auth/logout')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
-      .set({Origin: 'https://collegemate.app'});
-    expect(response.status).toBe(200);
+  test('Succes: With Web', async () => {
+    fail();
+  });
 
-    // Cookie Clear Check
-    let cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
-    expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
-    expect(cookie[1]).toBe('');
-    cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
-    expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
-    expect(cookie[1]).toBe('');
-
-    // DB Check
-    try {
-      await testEnv.dbClient.container('refreshTokens').item(testToken).read();
-      fail('Refresh Token should have been deleted');
-    } catch (e) {
-      if (e instanceof Error) expect(e).toBeDefined();
-    }
-
-    // Test App logout
-    tokenContent = {
-      id: 'existing@wisc.edu',
-      type: 'refresh',
-      tokenType: 'user',
-    };
-    testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
-      algorithm: 'HS512',
-      expiresIn: '180m',
-    });
-    expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
-    testToken =
-      expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
-    testTokenObj = new RefreshToken(testToken, 'existing@wisc.edu', expireAt);
-    testTokenObj.expireAt = (testTokenObj.expireAt as Date).toISOString();
-    await testEnv.dbClient
-      .container('refreshToken')
-      .items.create<RefreshToken>(testTokenObj);
-
-    // Test with Refresh Token
-    response = await request(testEnv.expressServer.app)
-      .delete('/auth/logout')
-      .set('Cookie', [`X-REFRESH-TOKEN=${testToken}`])
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'});
-    expect(response.status).toBe(200);
-
-    // Cookie Clear Check
-    cookie = response.header['set-cookie'][0].split('; ')[0].split('=');
-    expect(cookie[0]).toBe('X-ACCESS-TOKEN'); // Check for Access Token Name
-    expect(cookie[1]).toBe('');
-    cookie = response.header['set-cookie'][1].split('; ')[0].split('=');
-    expect(cookie[0]).toBe('X-REFRESH-TOKEN'); // check for Refresh Token Name
-    expect(cookie[1]).toBe('');
-
-    // DB Check
-    try {
-      await testEnv.dbClient.container('refreshTokens').item(testToken).read();
-      fail('Refresh Token should have been deleted');
-    } catch (e) {
-      if (e instanceof Error) expect(e).toBeDefined();
-    }
+  test('Succes: With Web and Request Body', async () => {
+    fail();
   });
 });
