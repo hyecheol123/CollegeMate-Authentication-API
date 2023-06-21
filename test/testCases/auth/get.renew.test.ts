@@ -150,11 +150,19 @@ describe('GET /auth/renew', () => {
   test('Fail: Request Body contains additional Fields', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Request without Refresh Token
-    const response = await request(testEnv.expressServer.app)
+    // Request without Refresh Token and Additional fields
+    let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set({Origin: 'https://collegemate.app'})
       .send({renewRefreshToken: true, additionalField: 'additionalValue'});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Bad Request');
+
+    // Request without Refresh Token and only Additional fields
+    response = await request(testEnv.expressServer.app)
+      .get('/auth/renew')
+      .set({Origin: 'https://collegemate.app'})
+      .send({additionalField: 'additionalValue'});
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
   });
