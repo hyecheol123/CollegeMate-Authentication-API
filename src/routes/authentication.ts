@@ -411,10 +411,8 @@ authenticationRouter.get('/renew', async (req, res, next) => {
       throw new ForbiddenError();
     }
 
-    type TokenVerifyRequest = {
-      renewRefreshToken: boolean;
-    };
-    const tokenVerifyRequest: TokenVerifyRequest = req.body;
+    const tokenVerifyRequest: {renewRefreshToken: boolean} = req.body;
+    // TODO: Input Validator (ajv)
 
     // Cookies check - refreshToken
     const tokenVerifyResult = await verifyRefreshToken(
@@ -425,6 +423,7 @@ authenticationRouter.get('/renew', async (req, res, next) => {
 
     // Retrieve user information (USER API)
     let userProfile: User | undefined = undefined;
+    // Check only when renewing refreshToken
     if (tokenVerifyRequest.renewRefreshToken) {
       try {
         userProfile = await getUserProfile(tokenVerifyResult.content.id, req);
@@ -474,7 +473,7 @@ authenticationRouter.get('/renew', async (req, res, next) => {
 
     if (refreshToken !== undefined) {
       cookieOption.maxAge = 180 * 60;
-      cookieOption.domain = `${req.app.get('serverDomain')}`;
+      cookieOption.domain = req.app.get('serverDomain');
       cookieOption.path = '/auth';
       res.cookie('X-REFRESH-TOKEN', refreshToken, cookieOption);
     }
