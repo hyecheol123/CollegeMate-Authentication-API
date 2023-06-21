@@ -70,7 +70,7 @@ describe('GET /auth/renew', () => {
       expiresIn: '180m',
     });
     expireAt = new Date();
-    expireAt.setMinutes(expireAt.getMinutes() + 180);
+    expireAt.setMinutes(expireAt.getMinutes() + 180); // This as well
     testToken =
       expireAt.getMilliseconds().toString().padStart(3, '0') + testToken;
     testTokenObj = new RefreshToken(testToken, 'deleted@wisc.edu', expireAt);
@@ -124,7 +124,7 @@ describe('GET /auth/renew', () => {
     // Wrong Refresh Token
     tokenContent = {
       id: 'existing@wisc.edu',
-      type: 'access',
+      type: 'access', // wrong type
       tokenType: 'user',
     };
     testToken = jwt.sign(tokenContent, 'keySecretRefresh', {
@@ -148,13 +148,21 @@ describe('GET /auth/renew', () => {
   });
 
   test('Fail: Request Body contains additional Fields', async () => {
-    fail();
+    testEnv.expressServer = testEnv.expressServer as ExpressServer;
+
+    // Request without Refresh Token
+    const response = await request(testEnv.expressServer.app)
+      .get('/auth/renew')
+      .set({Origin: 'https://collegemate.app'})
+      .send({renewRefreshToken: true, additionalField: 'additionalValue'});
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Bad Request');
   });
 
   test('Fail: No Refresh Token', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Test with Refresh Token and Request Body
+    // Request without Refresh Token
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set({Origin: 'https://collegemate.app'});
@@ -171,7 +179,7 @@ describe('GET /auth/renew', () => {
       1
     );
 
-    // Test with Refresh Token and Request Body
+    // Request with Invalid, Expired Refresh Token
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
@@ -184,7 +192,7 @@ describe('GET /auth/renew', () => {
   test('Fail: No Application Key and Not Origin', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Test with Not Permitted Origin
+    // Request From Not Permitted Origin
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
@@ -193,7 +201,7 @@ describe('GET /auth/renew', () => {
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
-    // Test with Missing Origin and Application Key
+    // Request with Missing Origin and Application Key
     response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
@@ -205,7 +213,7 @@ describe('GET /auth/renew', () => {
   test('Fail: Wrong Token', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Test with Wrong Token
+    // Request with Wrong Token
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.wrong}`])
@@ -218,7 +226,7 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test with Refresh Token with renewRefreshToken flag
+    // Request with Signup Token with renewRefreshToken flag
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
@@ -227,8 +235,8 @@ describe('GET /auth/renew', () => {
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
-    // Test with signup purpose token, which is about to expire
-    // Invalidate Refresh Token
+    // Request with signup purpose token, which is about to expire
+    // Make refresh token soon to expire
     expect(await invalidateToken(testEnv.dbClient, 50)).toBeGreaterThanOrEqual(
       1
     );
@@ -245,7 +253,7 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test with Refresh Token of deleted user
+    // Request with Refresh Token of deleted user
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.deleted}`])
@@ -254,14 +262,14 @@ describe('GET /auth/renew', () => {
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
-    // Test with signup purpose token, which is about to expire
-    // Invalidate Refresh Token
+    // Request with deleted user refresh token, which is about to expire
+    // Make refresh token soon to expire
     expect(await invalidateToken(testEnv.dbClient, 170)).toBeGreaterThanOrEqual(
       1
     );
     response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.deleted}`])
       .set({Origin: 'https://collegemate.app'})
       .send({renewRefreshToken: true});
     expect(response.status).toBe(403);
@@ -271,7 +279,7 @@ describe('GET /auth/renew', () => {
   test('Success: Signup Token', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Test with Refresh Token and No Request Body
+    // Request with Refresh Token and No Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
@@ -301,7 +309,7 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test with Refresh Token and Request Body
+    // Request with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
@@ -355,7 +363,7 @@ describe('GET /auth/renew', () => {
   test('Success: Application Key', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Test with Refresh Token and Request Body
+    // Request with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
@@ -385,7 +393,7 @@ describe('GET /auth/renew', () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Test with Refresh Token and Request Body
+    // Request with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
@@ -439,7 +447,7 @@ describe('GET /auth/renew', () => {
   test('Success: Web', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
 
-    // Test with Refresh Token and Request Body
+    // Request with Refresh Token and Request Body
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
