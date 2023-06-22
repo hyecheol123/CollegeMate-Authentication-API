@@ -7,7 +7,6 @@
 
 import {Request} from 'express';
 import TnC from './TnC';
-import NotFoundError from '../../exceptions/NotFoundError';
 
 /**
  * Function to retrieve most recent public terms and condition from
