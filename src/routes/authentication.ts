@@ -32,6 +32,7 @@ import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateE
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import getPasscode from '../functions/utils/getPasscode';
 import {validateRenewTokenRequest} from '../functions/inputValidator/validateRenewTokenRequest';
+import updateLastLogin from '../datatypes/User/updateLastLogin';
 
 // Path: /auth
 const authenticationRouter = express.Router();
@@ -347,6 +348,11 @@ authenticationRouter.get(
       // DB Operation
       const requestId = req.params.requestId;
       const otpContent = await OTP.read(dbClient, requestId);
+
+      // if signin, update lastLogin of the user
+      if (otpContent.purpose === 'signin') {
+        await updateLastLogin(otpContent.email, req);
+      }
 
       // Response
       res.status(200).json({

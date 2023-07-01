@@ -32,6 +32,7 @@
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
       "!src/datatypes/User/getUserProfile.ts",
+      "!src/datatypes/User/updateLastLogin.ts",
       "!src/datatypes/TNC/getTnC.ts",
       "!src/ServerConfigExample.ts",
       "!src/main.ts",

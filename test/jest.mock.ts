@@ -82,6 +82,12 @@ jest.mock('../src/datatypes/User/getUserProfile', () => ({
     }),
 }));
 
+// Mocking User - update last login function
+jest.mock('../src/datatypes/User/updateLastLogin', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => Promise.resolve()),
+}));
+
 // TnC Mock Data
 jest.mock('../src/datatypes/TNC/getTnC', () => ({
   __esModule: true,
