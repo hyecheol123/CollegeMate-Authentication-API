@@ -8,7 +8,6 @@ import {Request} from 'express';
 import {Buffer} from 'node:buffer';
 import ServerAdminKey from '../ServerAdminKey/ServerAdminKey';
 import createServerAdminToken from '../../functions/JWT/createServerAdminToken';
-import NotFoundError from '../../exceptions/NotFoundError';
 import User from './User';
 
 /**
@@ -31,7 +30,7 @@ export default async function getUserProfile(
     }
   );
 
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     try {
       const serverAdminKeyInfo = await ServerAdminKey.read(
         req.app.locals.dbClient,
@@ -56,11 +55,6 @@ export default async function getUserProfile(
       // Something goes wrong during serverAdminToken renewal - 500 Error
       throw new Error('[serverAdminToken renewal fail]\n(e as Error).message');
     }
-  }
-
-  if (response.status === 404) {
-    // Requested user not found
-    throw new NotFoundError();
   }
 
   if (response.status !== 200) {

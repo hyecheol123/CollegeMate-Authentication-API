@@ -31,7 +31,7 @@ export default async function updateLastLogin(
     }
   );
 
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     try {
       const serverAdminKeyInfo = await ServerAdminKey.read(
         req.app.locals.dbClient,
