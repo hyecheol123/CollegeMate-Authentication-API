@@ -44,17 +44,18 @@ export default async function getUserProfile(
           req.app.get('jwtAccessKey')
         )
       );
-      response = await fetch(
-        `https://api.collegemate.app/user/profile/${base64Email}`,
-        {
-          method: 'GET',
-          headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
-        }
-      );
     } catch (e) {
       // Something goes wrong during serverAdminToken renewal - 500 Error
       throw new Error('[serverAdminToken renewal fail]\n(e as Error).message');
     }
+
+    response = await fetch(
+      `https://api.collegemate.app/user/profile/${base64Email}`,
+      {
+        method: 'GET',
+        headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
+      }
+    );
   }
 
   if (response.status !== 200) {

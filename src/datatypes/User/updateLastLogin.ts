@@ -45,18 +45,19 @@ export default async function updateLastLogin(
           req.app.get('jwtAccessKey')
         )
       );
-      response = await fetch(
-        `https://api.collegemate.app/user/profile/${base64Email}/lastLogin`,
-        {
-          method: 'POST',
-          headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
-          body: JSON.stringify({lastLogin: updateTime}),
-        }
-      );
     } catch (e) {
       // Something goes wrong during serverAdminToken renewal - 500 Error
       throw new Error('[serverAdminToken renewal fail]\n(e as Error).message');
     }
+
+    response = await fetch(
+      `https://api.collegemate.app/user/profile/${base64Email}/lastLogin`,
+      {
+        method: 'POST',
+        headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
+        body: JSON.stringify({lastLogin: updateTime}),
+      }
+    );
   }
 
   if (response.status !== 200) {

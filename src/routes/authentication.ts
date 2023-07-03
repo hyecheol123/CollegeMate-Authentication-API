@@ -13,6 +13,7 @@ import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
 import User from '../datatypes/User/User';
 import getUserProfile from '../datatypes/User/getUserProfile';
+import updateLastLogin from '../datatypes/User/updateLastLogin';
 import getTnC from '../datatypes/TNC/getTnC';
 import RefreshToken from '../datatypes/RefreshToken/RefreshToken';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
@@ -32,7 +33,6 @@ import {validateEnterOTPCodeRequest} from '../functions/inputValidator/validateE
 import sendOTPCodeMail from '../functions/utils/sendOTPCodeMail';
 import getPasscode from '../functions/utils/getPasscode';
 import {validateRenewTokenRequest} from '../functions/inputValidator/validateRenewTokenRequest';
-import updateLastLogin from '../datatypes/User/updateLastLogin';
 
 // Path: /auth
 const authenticationRouter = express.Router();
