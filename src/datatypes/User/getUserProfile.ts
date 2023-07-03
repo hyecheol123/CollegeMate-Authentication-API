@@ -23,7 +23,7 @@ export default async function getUserProfile(
 ): Promise<User> {
   const base64Email = Buffer.from(email, 'utf8').toString('base64url');
   let response = await fetch(
-    `https://api.collegemate.app/user/${base64Email}`,
+    `https://api.collegemate.app/user/profile/${base64Email}`,
     {
       method: 'GET',
       headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
@@ -45,7 +45,7 @@ export default async function getUserProfile(
         )
       );
       response = await fetch(
-        `https://api.collegemate.app/user/${base64Email}`,
+        `https://api.collegemate.app/user/profile/${base64Email}`,
         {
           method: 'GET',
           headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},

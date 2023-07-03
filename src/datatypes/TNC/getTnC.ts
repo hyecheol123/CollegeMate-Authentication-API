@@ -21,6 +21,12 @@ export default async function getTnC(req: Request): Promise<TnC> {
     headers: {'X-APPLICATION-KEY': req.app.get('serverApplicationKey')},
   });
 
+  if (response.status === 404) {
+    throw new Error(
+      '[Fail on retrieving Terms and Condition - DB entry not found]'
+    );
+  }
+
   if (response.status !== 200) {
     throw new Error('[Fail on retreiving Terms and Condition]');
   }

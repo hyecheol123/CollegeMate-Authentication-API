@@ -286,17 +286,9 @@ authenticationRouter.post(
       // Retrieve most recent TNC Version (Miscellaneous API / signin)
       let needNewTNCAccpet: boolean | undefined = undefined;
       if (otpObject.purpose === 'signin' && userProfile) {
-        try {
-          const recentTnC = await getTnC(req);
-          if (userProfile.tncVersion < recentTnC.version) {
-            needNewTNCAccpet = true;
-          }
-        } catch (e) {
-          // If 404, ignore the error
-          // istanbul ignore next
-          if ((e as HTTPError).statusCode !== 404) {
-            throw e;
-          }
+        const recentTnC = await getTnC(req);
+        if (userProfile.tncVersion < recentTnC.version) {
+          needNewTNCAccpet = true;
         }
       }
 
