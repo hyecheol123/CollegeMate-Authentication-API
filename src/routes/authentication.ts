@@ -13,6 +13,7 @@ import ServerAdminKey from '../datatypes/ServerAdminKey/ServerAdminKey';
 import OTP from '../datatypes/OTP/OTP';
 import User from '../datatypes/User/User';
 import getUserProfile from '../datatypes/User/getUserProfile';
+import updateLastLogin from '../datatypes/User/updateLastLogin';
 import getTnC from '../datatypes/TNC/getTnC';
 import RefreshToken from '../datatypes/RefreshToken/RefreshToken';
 import RefreshTokenVerifyResult from '../datatypes/Token/RefreshTokenVerifyResult';
@@ -339,6 +340,11 @@ authenticationRouter.get(
       // DB Operation
       const requestId = req.params.requestId;
       const otpContent = await OTP.read(dbClient, requestId);
+
+      // if signin, update lastLogin of the user
+      if (otpContent.purpose === 'signin') {
+        await updateLastLogin(otpContent.email, req);
+      }
 
       // Response
       res.status(200).json({

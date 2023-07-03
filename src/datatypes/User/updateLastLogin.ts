@@ -1,32 +1,33 @@
 /**
- * Function to retrieve User Profile from User API
+ * Function to update last login date of user with User API
  *
  * @author Hyecheol (Jerry) Jang <hyecheol123@gmail.com>
+ * @author Seok-Hee (Steve) Han <seokheehan01@gmail.com>
  */
 
 import {Request} from 'express';
 import {Buffer} from 'node:buffer';
 import ServerAdminKey from '../ServerAdminKey/ServerAdminKey';
 import createServerAdminToken from '../../functions/JWT/createServerAdminToken';
-import User from './User';
 
 /**
- * Function to retrieve User Profile from User API
+ * Function to update last login date of user with User API
  *
  * @param {string} email email address for user
  * @param {Request} req express Request object
- * @return {Promise<User>} User Profile
  */
-export default async function getUserProfile(
+export default async function updateLastLogin(
   email: string,
   req: Request
-): Promise<User> {
+): Promise<void> {
   const base64Email = Buffer.from(email, 'utf8').toString('base64url');
+  const updateTime = new Date().toISOString();
   let response = await fetch(
-    `https://api.collegemate.app/user/profile/${base64Email}`,
+    `https://api.collegemate.app/user/profile/${base64Email}/lastLogin`,
     {
-      method: 'GET',
+      method: 'POST',
       headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
+      body: JSON.stringify({lastLogin: updateTime}),
     }
   );
 
@@ -50,39 +51,16 @@ export default async function getUserProfile(
     }
 
     response = await fetch(
-      `https://api.collegemate.app/user/profile/${base64Email}`,
+      `https://api.collegemate.app/user/profile/${base64Email}/lastLogin`,
       {
-        method: 'GET',
+        method: 'POST',
         headers: {'X-SERVER-TOKEN': req.app.get('serverAdminToken')},
+        body: JSON.stringify({lastLogin: updateTime}),
       }
     );
   }
 
   if (response.status !== 200) {
-    throw new Error('[Fail on retreiving User Profile]');
+    throw new Error('[Fail on updating User lastLogin]');
   }
-
-  // Found requested user
-  const userProfileInfo = await response.json();
-  return {
-    email: email,
-    nickname: userProfileInfo.nickname,
-    lastLogin: new Date(userProfileInfo.lastLogin),
-    signUpDate: new Date(userProfileInfo.signUpDate),
-    nicknameChanged: new Date(userProfileInfo.nicknameChanged),
-    deleted: userProfileInfo.deleted,
-    deletedAt: userProfileInfo.deleted
-      ? new Date(userProfileInfo.deletedAt)
-      : undefined,
-    locked: false,
-    lockedAt: userProfileInfo.locked
-      ? new Date(userProfileInfo.lockedAt)
-      : undefined,
-    lockedDescription: userProfileInfo.locked
-      ? userProfileInfo.lockedDescription
-      : undefined,
-    major: userProfileInfo.major,
-    graduationYear: userProfileInfo.graduationYear,
-    tncVersion: userProfileInfo.tncVersion,
-  };
 }
