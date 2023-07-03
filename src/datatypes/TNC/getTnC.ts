@@ -7,7 +7,6 @@
 
 import {Request} from 'express';
 import TnC from './TnC';
-import NotFoundError from '../../exceptions/NotFoundError';
 
 /**
  * Function to retrieve most recent public terms and condition from
@@ -23,7 +22,9 @@ export default async function getTnC(req: Request): Promise<TnC> {
   });
 
   if (response.status === 404) {
-    throw new NotFoundError();
+    throw new Error(
+      '[Fail on retrieving Terms and Condition - DB entry not found]'
+    );
   }
 
   if (response.status !== 200) {
