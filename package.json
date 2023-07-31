@@ -65,7 +65,7 @@
     "node": ">=16"
   },
   "devDependencies": {
-    "@microsoft/microsoft-graph-types": "^2.35.0",
+    "@microsoft/microsoft-graph-types": "^2.38.0",
     "@types/cookie-parser": "^1.4.3",
     "@types/ejs": "^3.1.2",
     "@types/express": "^4.17.17",
