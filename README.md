@@ -47,7 +47,55 @@ Data Diagram
 <details>
   <summary>Click to see configurations of each collection.</summary>
 
-  *To be added*
+  Configuration of `serverAdminKey` Collection
+  
+  ``` JavaScript
+  {
+    id: 'serverAdminKey',
+    indexingPolicy: {
+      indexingMode: 'consistent',
+      automatic: true,
+      includedPaths: [{path: '/*'}],
+      excludedPaths: [{path: '/"_etag"/?'}],
+    },
+    uniqueKeyPolicy: {
+      uniqueKeys: [{paths: ['/nickname']}],
+    },
+  }
+  ```
+
+  Configuration for `refreshToken` Collection
+
+  ``` JavaScript
+  {
+    id: 'refreshToken',
+    indexingPolicy: {
+      indexingMode: 'consistent',
+      automatic: true,
+      includedPaths: [{path: '/*'}],
+      excludedPaths: [{path: '/"_etag"/?'}],
+    },
+  }
+  ```
+
+  Configuration for `otp` Collection
+  
+  ``` JavaScript
+  {
+    id: 'otp',
+    indexingPolicy: {
+      indexingMode: 'consistent',
+      automatic: true,
+      includedPaths: [{path: '/*'}],
+      excludedPaths: [
+        {path: '/passcode/?'},
+        {path: '/verified/?'},
+        {path: '/"_etag"/?'},
+      ],
+    },
+  }
+  ```
+  
 </details>
 
 [Express](https://expressjs.com/) is a web framework for node.js.
