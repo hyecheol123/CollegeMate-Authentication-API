@@ -96,7 +96,10 @@ jest.mock('../src/datatypes/TNC/getTnC', () => ({
     return {
       version: 'v1.0.2',
       createdAt: new Date('2022-03-01T00:50:43.000Z').toISOString(),
-      content: 'test',
+      content: {
+        privacyAct: 'Privacy Act',
+        termsAndConditions: 'Terms and Conditions',
+      },
     };
   }),
 }));
