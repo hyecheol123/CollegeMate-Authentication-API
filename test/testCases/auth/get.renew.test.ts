@@ -154,7 +154,7 @@ describe('GET /auth/renew', () => {
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true, additionalField: 'additionalValue'});
+      .send({isSignup: false, additionalField: 'additionalValue'});
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
 
@@ -191,8 +191,7 @@ describe('GET /auth/renew', () => {
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
-      .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true});
+      .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
   });
@@ -204,16 +203,14 @@ describe('GET /auth/renew', () => {
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
-      .set({Origin: 'https://suspicious.app'})
-      .send({renewRefreshToken: true});
+      .set({Origin: 'https://suspicious.app'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
     // Request with Missing Origin and Application Key
     response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
-      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
-      .send({renewRefreshToken: true});
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`]);
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
   });
@@ -230,16 +227,24 @@ describe('GET /auth/renew', () => {
     expect(response.body.error).toBe('Forbidden');
   });
 
-  test('Fail: Signup Token with renewRefreshToken flag', async () => {
+  test('Fail: Signup Token without isSignup flag', async () => {
     testEnv.expressServer = testEnv.expressServer as ExpressServer;
     testEnv.dbClient = testEnv.dbClient as Cosmos.Database;
 
-    // Request with Signup Token with renewRefreshToken flag
+    // Request with Signup Token without isSignup flag
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
+      .set({Origin: 'https://collegemate.app'});
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe('Forbidden');
+
+    // Request with Signup Token with wrong isSignup flag
+    response = await request(testEnv.expressServer.app)
+      .get('/auth/renew')
+      .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
       .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true});
+      .send({isSignup: false});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
@@ -251,8 +256,7 @@ describe('GET /auth/renew', () => {
     response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
-      .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true});
+      .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
   });
@@ -265,8 +269,7 @@ describe('GET /auth/renew', () => {
     let response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.deleted}`])
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({renewRefreshToken: true});
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
 
@@ -278,8 +281,7 @@ describe('GET /auth/renew', () => {
     response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.deleted}`])
-      .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true});
+      .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(403);
     expect(response.body.error).toBe('Forbidden');
   });
@@ -291,7 +293,8 @@ describe('GET /auth/renew', () => {
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.signup}`])
-      .set({Origin: 'https://collegemate.app'});
+      .set({Origin: 'https://collegemate.app'})
+      .send({isSignup: true});
     expect(response.status).toBe(200);
 
     // Check Cookie & Token Information
@@ -321,8 +324,7 @@ describe('GET /auth/renew', () => {
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
-      .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({renewRefreshToken: true});
+      .set({'X-APPLICATION-KEY': '<Android-App-v1>'});
     expect(response.status).toBe(200);
 
     // Check Cookie & Token Information
@@ -376,7 +378,7 @@ describe('GET /auth/renew', () => {
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
       .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
-      .send({renewRefreshToken: true});
+      .send({isSignup: true});
     expect(response.status).toBe(200);
 
     // Check Cookie & Token Information
@@ -405,8 +407,7 @@ describe('GET /auth/renew', () => {
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
-      .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true});
+      .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(200);
 
     // Check Cookie & Token Information
@@ -459,8 +460,7 @@ describe('GET /auth/renew', () => {
     const response = await request(testEnv.expressServer.app)
       .get('/auth/renew')
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
-      .set({Origin: 'https://collegemate.app'})
-      .send({renewRefreshToken: true});
+      .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(200);
 
     // Check Cookie & Token Information

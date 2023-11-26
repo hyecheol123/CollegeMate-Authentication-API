@@ -9,7 +9,7 @@ import Ajv from 'ajv';
 export const validateRenewTokenRequest = new Ajv().compile({
   type: 'object',
   properties: {
-    renewRefreshToken: {type: 'boolean'},
+    isSignup: {type: 'boolean'},
   },
   additionalProperties: false,
 });

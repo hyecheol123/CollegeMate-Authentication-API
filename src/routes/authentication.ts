@@ -410,7 +410,7 @@ authenticationRouter.get('/renew', async (req, res, next) => {
       throw new ForbiddenError();
     }
 
-    const tokenVerifyRequest: {renewRefreshToken: boolean} = req.body;
+    const tokenVerifyRequest: {isSignup: boolean} = req.body;
     if (!validateRenewTokenRequest(tokenVerifyRequest)) {
       throw new BadRequestError();
     }
@@ -424,7 +424,7 @@ authenticationRouter.get('/renew', async (req, res, next) => {
 
     let refreshToken: string | undefined;
     // Check only when renewing refreshToken
-    if (tokenVerifyRequest.renewRefreshToken) {
+    if (!tokenVerifyRequest.isSignup) {
       // Retrieve user information (USER API)
       let userProfile: User | undefined;
       try {
@@ -439,7 +439,7 @@ authenticationRouter.get('/renew', async (req, res, next) => {
         }
       }
 
-      // If user is deleted or locked and renewRefreshToken is true, throw error
+      // If user is deleted or locked throw error
       if (userProfile.deleted || userProfile.locked) {
         throw new ForbiddenError();
       }
