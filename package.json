@@ -72,7 +72,7 @@
     "@types/jest": "^29.5.10",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.9.4",
-    "@types/supertest": "^2.0.16",
+    "@types/supertest": "^6.0.1",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "gts": "^5.2.0",
