@@ -296,6 +296,7 @@ describe('GET /auth/renew', () => {
       .set({Origin: 'https://collegemate.app'})
       .send({isSignup: true});
     expect(response.status).toBe(200);
+    expect(response.body.id).toBe('newAccount@wisc.edu');
 
     // Check Cookie & Token Information
     const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
@@ -326,6 +327,7 @@ describe('GET /auth/renew', () => {
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
       .set({'X-APPLICATION-KEY': '<Android-App-v1>'});
     expect(response.status).toBe(200);
+    expect(response.body.id).toBe('existing@wisc.edu');
 
     // Check Cookie & Token Information
     const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
@@ -380,6 +382,7 @@ describe('GET /auth/renew', () => {
       .set({'X-APPLICATION-KEY': '<Android-App-v1>'})
       .send({isSignup: true});
     expect(response.status).toBe(200);
+    expect(response.body.id).toBe('existing@wisc.edu');
 
     // Check Cookie & Token Information
     const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
@@ -409,6 +412,7 @@ describe('GET /auth/renew', () => {
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.soonExpired}`])
       .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(200);
+    expect(response.body.id).toBe('existing@wisc.edu');
 
     // Check Cookie & Token Information
     const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
@@ -462,6 +466,7 @@ describe('GET /auth/renew', () => {
       .set('Cookie', [`X-REFRESH-TOKEN=${refreshTokenMap.valid}`])
       .set({Origin: 'https://collegemate.app'});
     expect(response.status).toBe(200);
+    expect(response.body.id).toBe('existing@wisc.edu');
 
     // Check Cookie & Token Information
     const jwtOption: jwt.VerifyOptions = {algorithms: ['HS512']};
