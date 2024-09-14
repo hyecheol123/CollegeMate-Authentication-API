@@ -476,7 +476,9 @@ authenticationRouter.get('/renew', async (req, res, next) => {
       cookieOption.path = '/auth';
       res.cookie('X-REFRESH-TOKEN', refreshToken, cookieOption);
     }
-    res.status(200).send();
+    res.status(200).send({
+      id: tokenVerifyResult.content.id,
+    });
   } catch (e) {
     next(e);
   }
