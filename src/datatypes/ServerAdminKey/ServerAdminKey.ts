@@ -8,7 +8,7 @@ import * as Cosmos from '@azure/cosmos';
 import HTTPError from '../../exceptions/HTTPError';
 import NotFoundError from '../../exceptions/NotFoundError';
 import MetaData from './MetaData';
-import { AccountType } from '../Token/AuthToken';
+import {AccountType} from '../Token/AuthToken';
 
 // DB Container id
 const SERVER_ADMIN_KEY = 'serverAdminKey';
@@ -162,7 +162,7 @@ export default class ServerAdminKey {
           `SELECT a.id FROM ${SERVER_ADMIN_KEY} as a `,
           'WHERE a.nickname = @nickname'
         ),
-        parameters: [{ name: '@nickname', value: nickname }],
+        parameters: [{name: '@nickname', value: nickname}],
       })
       .fetchAll();
     if (dbOps.resources.length === 0) {
