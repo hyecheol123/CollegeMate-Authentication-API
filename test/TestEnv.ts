@@ -77,7 +77,7 @@ export default class TestEnv {
       uniqueKeyPolicy: {
         uniqueKeys: [{paths: ['/nickname']}],
       },
-      partitionKey: '/id',
+      partitionKey: '/partitionKey',
     });
     /* istanbul ignore next */
     if (containerOps.statusCode !== 201) {
@@ -94,6 +94,7 @@ export default class TestEnv {
       generatedAt: keyTimestamp.toISOString(),
       nickname: nickname,
       accountType: accountType as AccountType,
+      partitionKey: 1,
     });
     // testAuthAPI, server - authentication
     keyTimestamp = new Date('2023-03-11T00:50:43.000Z');
@@ -104,6 +105,7 @@ export default class TestEnv {
       generatedAt: keyTimestamp.toISOString(),
       nickname: nickname,
       accountType: accountType as AccountType,
+      partitionKey: 1,
     });
     for (let index = 0; index < serverAdminKeySamples.length; index++) {
       await this.dbClient

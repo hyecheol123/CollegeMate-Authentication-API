@@ -18,6 +18,7 @@ export default class ServerAdminKey {
   generatedAt: Date | string;
   nickname: string;
   accountType: AccountType;
+  partitionKey: 1;
 
   /**
    * Constructor for ServerAdminKey Object
@@ -39,6 +40,7 @@ export default class ServerAdminKey {
     this.generatedAt = generatedAt;
     this.nickname = nickname;
     this.accountType = accountType;
+    this.partitionKey = 1;
   }
 
   /**
