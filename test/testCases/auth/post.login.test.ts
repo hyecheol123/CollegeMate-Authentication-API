@@ -95,6 +95,7 @@ describe('POST /auth/login - Get Server/Admin Authentication Token (Server Use O
       generatedAt: keyTimestamp.toISOString(),
       nickname: nickname,
       accountType: accountType,
+      partitionKey: 1,
     });
     response = response = await request(testEnv.expressServer.app)
       .post('/auth/login')
@@ -155,7 +156,7 @@ describe('POST /auth/login - Get Server/Admin Authentication Token (Server Use O
     );
     await testEnv.dbClient
       .container('serverAdminKey')
-      .item(targetKey, targetKey)
+      .item(targetKey, 1)
       .delete();
     response = await request(testEnv.expressServer.app)
       .post('/auth/login')
