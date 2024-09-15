@@ -77,6 +77,7 @@ export default class TestEnv {
       uniqueKeyPolicy: {
         uniqueKeys: [{paths: ['/nickname']}],
       },
+      partitionKey: '/id',
     });
     /* istanbul ignore next */
     if (containerOps.statusCode !== 201) {
@@ -119,6 +120,7 @@ export default class TestEnv {
         includedPaths: [{path: '/*'}],
         excludedPaths: [{path: '/"_etag"/?'}],
       },
+      partitionKey: '/id',
     });
     /* istanbul ignore next */
     if (containerOps.statusCode !== 201) {
@@ -139,6 +141,7 @@ export default class TestEnv {
           {path: '/"_etag"/?'},
         ],
       },
+      partitionKey: '/id',
     });
     /* istanbul ignore next */
     if (containerOps.statusCode !== 201) {

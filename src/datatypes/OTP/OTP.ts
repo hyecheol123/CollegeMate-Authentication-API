@@ -68,7 +68,10 @@ export default class OTP {
     dbClient: Cosmos.Database,
     requestId: string
   ): Promise<OTP> {
-    const dbOps = await dbClient.container(OTP_DB).item(requestId).read<OTP>();
+    const dbOps = await dbClient
+      .container(OTP_DB)
+      .item(requestId, requestId)
+      .read<OTP>();
 
     if (dbOps.statusCode === 404 || dbOps.resource === undefined) {
       throw new NotFoundError();
@@ -99,7 +102,7 @@ export default class OTP {
 
     const dbOps = await dbClient
       .container(OTP_DB)
-      .item(requestId)
+      .item(requestId, requestId)
       .patch([
         {op: 'replace', path: '/verified', value: true},
         {op: 'replace', path: '/expireAt', value: newExpireAt.toISOString()},

@@ -55,7 +55,10 @@ export default class RefreshToken {
     dbClient: Cosmos.Database,
     token: string
   ): Promise<RefreshToken> {
-    const dbOps = await dbClient.container(REFRESH_TOKEN).item(token).read();
+    const dbOps = await dbClient
+      .container(REFRESH_TOKEN)
+      .item(token, token)
+      .read();
 
     if (dbOps.statusCode === 404) {
       throw new NotFoundError();
@@ -79,7 +82,10 @@ export default class RefreshToken {
     refreshToken: string
   ): Promise<void> {
     try {
-      await dbClient.container(REFRESH_TOKEN).item(refreshToken).delete();
+      await dbClient
+        .container(REFRESH_TOKEN)
+        .item(refreshToken, refreshToken)
+        .delete();
     } catch (e) {
       // istanbul ignore next
       if ((e as Cosmos.ErrorResponse).code === 404) {

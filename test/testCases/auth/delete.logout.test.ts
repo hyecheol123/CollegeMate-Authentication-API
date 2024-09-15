@@ -74,7 +74,10 @@ describe('DELETE /auth/logout', () => {
 
     // DB Check
     try {
-      await testEnv.dbClient.container('refreshTokens').item(testToken).read();
+      await testEnv.dbClient
+        .container('refreshTokens')
+        .item(testToken, testToken)
+        .read();
       fail('Refresh Token should have been deleted');
     } catch (e) {
       if (e instanceof Error) expect(e).toBeDefined();
@@ -117,7 +120,10 @@ describe('DELETE /auth/logout', () => {
 
     // DB Check
     try {
-      await testEnv.dbClient.container('refreshTokens').item(testToken).read();
+      await testEnv.dbClient
+        .container('refreshTokens')
+        .item(testToken, testToken)
+        .read();
       fail('Refresh Token should have been deleted');
     } catch (e) {
       if (e instanceof Error) expect(e).toBeDefined();

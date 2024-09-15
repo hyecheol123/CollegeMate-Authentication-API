@@ -361,7 +361,7 @@ describe('GET /auth/renew', () => {
     // DB Checks - Token Existence
     const dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -446,7 +446,7 @@ describe('GET /auth/renew', () => {
     // DB Checks - Token Existence
     const dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');

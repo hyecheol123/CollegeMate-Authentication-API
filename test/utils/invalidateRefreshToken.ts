@@ -39,7 +39,7 @@ export default async function invalidateToken(
     // DB Operation
     const dbUpdate = await dbClient
       .container('refreshToken')
-      .item(refreshTokenObj.id)
+      .item(refreshTokenObj.id, refreshTokenObj.id)
       .replace(refreshTokenObj);
 
     /* istanbul ignore else */

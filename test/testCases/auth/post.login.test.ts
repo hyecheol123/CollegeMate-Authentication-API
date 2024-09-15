@@ -153,7 +153,10 @@ describe('POST /auth/login - Get Server/Admin Authentication Token (Server Use O
       new Date('2023-03-11T00:50:43.000Z').toISOString(),
       'server - authentication'
     );
-    await testEnv.dbClient.container('serverAdminKey').item(targetKey).delete();
+    await testEnv.dbClient
+      .container('serverAdminKey')
+      .item(targetKey, targetKey)
+      .delete();
     response = await request(testEnv.expressServer.app)
       .post('/auth/login')
       .set({'X-SERVER-KEY': targetKey});

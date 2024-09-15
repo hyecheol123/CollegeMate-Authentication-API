@@ -83,7 +83,10 @@ export default class ServerAdminKey {
     dbClient: Cosmos.Database,
     key: string
   ): Promise<ServerAdminKey> {
-    const dbOps = await dbClient.container(SERVER_ADMIN_KEY).item(key).read();
+    const dbOps = await dbClient
+      .container(SERVER_ADMIN_KEY)
+      .item(key, key)
+      .read();
 
     if (dbOps.statusCode === 404) {
       throw new NotFoundError();
@@ -129,7 +132,7 @@ export default class ServerAdminKey {
     key: string
   ): Promise<void> {
     try {
-      await dbClient.container(SERVER_ADMIN_KEY).item(key).delete();
+      await dbClient.container(SERVER_ADMIN_KEY).item(key, key).delete();
     } catch (e) {
       // istanbul ignore else
       if ((e as Cosmos.ErrorResponse).code === 404) {

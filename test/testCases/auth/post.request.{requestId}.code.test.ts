@@ -83,7 +83,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -147,7 +147,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -187,7 +187,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -228,7 +228,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -256,12 +256,18 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     const {requestId} = response.body;
 
     // Expired Request
-    let dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    let dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     const {resource} = dbOps;
     resource.expireAt = new Date();
     resource.expireAt.setMinutes(resource.expireAt.getMinutes() - 1);
-    await testEnv.dbClient.container('otp').item(requestId).replace(resource);
+    await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .replace(resource);
 
     // Request - Enter OTP Code
     response = await request(testEnv.expressServer.app)
@@ -274,7 +280,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(response.header['set-cookie']).toBeUndefined();
 
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -345,7 +354,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -434,7 +443,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -546,7 +555,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -609,7 +618,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - Token Existence
     let dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -619,7 +628,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expectedExpires.setMinutes(expectedExpires.getMinutes() + 181);
     expect(sessionExpires < expectedExpires).toBe(true);
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -636,7 +648,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'existing@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(409);
     expect(response.body.error).toBe('Conflict');
-    let dbOps2 = await testEnv.dbClient.container('otp').item(requestId).read();
+    let dbOps2 = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps2.statusCode !== 404).toBe(true);
     expect(dbOps2.resource.expireAt).toBe(dbOps.resource.expireAt);
 
@@ -684,7 +699,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - Token Existence
     dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('newaccount@wisc.edu');
@@ -694,7 +709,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expectedExpires.setMinutes(expectedExpires.getMinutes() + 61);
     expect(sessionExpires < expectedExpires).toBe(true);
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('newaccount@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signup');
@@ -711,7 +729,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'newaccount@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(409);
     expect(response.body.error).toBe('Conflict');
-    dbOps2 = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps2 = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps2.statusCode !== 404).toBe(true);
     expect(dbOps2.resource.expireAt).toBe(dbOps.resource.expireAt);
 
@@ -783,7 +804,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     currDate.setMinutes(currDate.getMinutes() + 11);
     expect(otpExpires < currDate).toBe(true);
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
     expect(dbOps.resource.purpose).toBe('sudo');
@@ -801,7 +825,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
       .send({email: 'existing@wisc.edu', passcode: '123456'});
     expect(response.status).toBe(409);
     expect(response.body.error).toBe('Conflict');
-    dbOps2 = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps2 = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps2.statusCode !== 404).toBe(true);
     expect(dbOps2.resource.expireAt).toBe(dbOps.resource.expireAt);
   });
@@ -845,7 +872,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(response.header['set-cookie']).toBeUndefined();
 
     // DB Checks - OTP Verified Flags
-    const dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    const dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signup');
@@ -896,7 +923,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
     // DB Checks - OTP Verified Flags
-    let dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    let dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('deleted@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -933,7 +960,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('locked@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -970,7 +997,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // Check Cookie & Token Information
     expect(response.header['set-cookie']).toBeUndefined();
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('na@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -1039,7 +1066,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Unauthenticated');
     // DB Checks - OTP Verified Flags
-    let dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    let dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('deleted@wisc.edu');
     expect(dbOps.resource.purpose).toBe('sudo');
@@ -1093,7 +1120,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Unauthenticated');
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('locked@wisc.edu');
     expect(dbOps.resource.purpose).toBe('sudo');
@@ -1147,7 +1174,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Unauthenticated');
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(id).read();
+    dbOps = await testEnv.dbClient.container('otp').item(id, id).read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('na@wisc.edu');
     expect(dbOps.resource.purpose).toBe('sudo');
@@ -1189,7 +1216,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -1233,7 +1260,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -1297,7 +1324,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - Token Existence
     let dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('newaccount@wisc.edu');
@@ -1308,7 +1335,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(sessionExpires < expectedExpires).toBe(true);
 
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('newaccount@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signup');
@@ -1370,7 +1400,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - Token Existence
     let dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -1381,7 +1411,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(sessionExpires < expectedExpires).toBe(true);
 
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -1447,7 +1480,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - Token Existence
     let dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -1462,7 +1495,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(sessionExpires < expectedExpires).toBe(true);
 
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -1524,7 +1560,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - Token Existence
     let dbOps = await testEnv.dbClient
       .container('refreshToken')
-      .item(cookie[1])
+      .item(cookie[1], cookie[1])
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('old@wisc.edu');
@@ -1535,7 +1571,10 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     expect(sessionExpires < expectedExpires).toBe(true);
 
     // DB Checks - OTP Verified Flags
-    dbOps = await testEnv.dbClient.container('otp').item(requestId).read();
+    dbOps = await testEnv.dbClient
+      .container('otp')
+      .item(requestId, requestId)
+      .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('old@wisc.edu');
     expect(dbOps.resource.purpose).toBe('signin');
@@ -1624,7 +1663,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
@@ -1714,7 +1753,7 @@ describe('POST /auth/request/{requestId}/code - Enter OTP Code', () => {
     // DB Checks - OTP Verified Flags
     const dbOps = await testEnv.dbClient
       .container('otp')
-      .item(requestId)
+      .item(requestId, requestId)
       .read();
     expect(dbOps.statusCode !== 404).toBe(true);
     expect(dbOps.resource.email).toBe('existing@wisc.edu');
