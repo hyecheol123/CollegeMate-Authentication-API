@@ -8,7 +8,7 @@ import * as Cosmos from '@azure/cosmos';
 import HTTPError from '../../exceptions/HTTPError';
 import NotFoundError from '../../exceptions/NotFoundError';
 import MetaData from './MetaData';
-import {AccountType} from '../Token/AuthToken';
+import { AccountType } from '../Token/AuthToken';
 
 // DB Container id
 const SERVER_ADMIN_KEY = 'serverAdminKey';
@@ -87,7 +87,7 @@ export default class ServerAdminKey {
   ): Promise<ServerAdminKey> {
     const dbOps = await dbClient
       .container(SERVER_ADMIN_KEY)
-      .item(key, key)
+      .item(key, 1)
       .read();
 
     if (dbOps.statusCode === 404) {
@@ -134,7 +134,7 @@ export default class ServerAdminKey {
     key: string
   ): Promise<void> {
     try {
-      await dbClient.container(SERVER_ADMIN_KEY).item(key, key).delete();
+      await dbClient.container(SERVER_ADMIN_KEY).item(key, 1).delete();
     } catch (e) {
       // istanbul ignore else
       if ((e as Cosmos.ErrorResponse).code === 404) {
@@ -162,7 +162,7 @@ export default class ServerAdminKey {
           `SELECT a.id FROM ${SERVER_ADMIN_KEY} as a `,
           'WHERE a.nickname = @nickname'
         ),
-        parameters: [{name: '@nickname', value: nickname}],
+        parameters: [{ name: '@nickname', value: nickname }],
       })
       .fetchAll();
     if (dbOps.resources.length === 0) {
